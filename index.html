@@ -253,9 +253,20 @@
                             <button onclick="navigateTo('signup')" class="px-8 py-4 bg-white text-blue-600 border border-blue-100 font-bold rounded-2xl hover:bg-blue-50 transition" data-i18n="startLearning">Start Learning</button>
                         </div>
                     </div>
-                    <div class="flex-1 relative">
+                    <div class="flex-1 relative group" id="hero-media-container">
                         <div class="w-full aspect-square max-w-lg mx-auto bg-gradient-to-tr from-blue-600 to-indigo-400 rounded-3xl rotate-3 absolute -z-10 blur-2xl opacity-20"></div>
-                        <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Learning" class="rounded-3xl shadow-2xl transform transition hover:-translate-y-2 duration-500">
+                        <div class="relative rounded-[2rem] overflow-hidden shadow-2xl transform transition hover:-translate-y-2 duration-500 aspect-video bg-slate-100 border border-slate-100">
+                            <img id="hero-poster-img" src="" alt="" class="w-full h-full object-cover hidden">
+                            <div id="hero-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-300">
+                                <i class="fas fa-image text-4xl mb-2"></i>
+                                <p class="text-[10px] font-bold uppercase tracking-widest">No Poster Set</p>
+                            </div>
+                            <button id="hero-play-btn" class="hidden absolute inset-0 w-full h-full flex items-center justify-center bg-black/10 hover:bg-black/20 transition backdrop-blur-[2px]">
+                                <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center text-blue-600 text-3xl shadow-2xl transform transition group-hover:scale-110">
+                                    <i class="fas fa-play ml-1"></i>
+                                </div>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -569,6 +580,7 @@
                         <button onclick="switchAdminTab('users')" class="px-4 py-2 bg-slate-200 rounded-xl admin-tab-btn active" data-tab="users">Users</button>
                         <button onclick="switchAdminTab('courses')" class="px-4 py-2 bg-slate-200 rounded-xl admin-tab-btn" data-tab="courses">Courses</button>
                         <button onclick="switchAdminTab('enrollments')" class="px-4 py-2 bg-slate-200 rounded-xl admin-tab-btn" data-tab="enrollments">Enrollments</button>
+                        <button onclick="switchAdminTab('custom')" class="px-4 py-2 bg-slate-200 rounded-xl admin-tab-btn" data-tab="custom">Customization</button>
                     </div>
                 </div>
 
@@ -612,6 +624,27 @@
                         </table>
                     </div>
                 </div>
+
+                <div id="admin-custom" class="admin-tab hidden">
+                    <div class="max-w-2xl bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+                        <h3 class="text-xl font-bold mb-6">Homepage Customization</h3>
+                        <form id="hero-custom-form" class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-bold mb-2">Hero Poster Image (URL)</label>
+                                <input type="url" id="hero-poster-input" placeholder="https://i.imgur.com/..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 ring-blue-500">
+                                <p class="text-[10px] text-slate-400 mt-1">Recommended resolution: 16:9 or Square</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold mb-2">Hero Intro Video (YouTube URL)</label>
+                                <input type="url" id="hero-video-input" placeholder="https://youtube.com/watch?v=..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 ring-blue-500">
+                                <p class="text-[10px] text-slate-400 mt-1">Leave empty if no video is needed</p>
+                            </div>
+                            <button type="submit" class="w-full py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition flex items-center justify-center gap-2">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -638,6 +671,17 @@
     </footer>
 
     <!-- MODALS -->
+
+    <!-- Hero Video Modal -->
+    <div id="hero-video-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-md" onclick="hideHeroVideo()"></div>
+        <div class="bg-black w-full max-w-5xl aspect-video rounded-3xl relative overflow-hidden shadow-2xl">
+            <button onclick="hideHeroVideo()" class="absolute top-4 right-4 w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center z-10">
+                <i class="fas fa-times"></i>
+            </button>
+            <iframe id="hero-yt-player" class="w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+    </div>
     
     <!-- Course Form Modal -->
     <div id="course-modal" class="fixed inset-0 z-[70] hidden flex items-center justify-center p-4">
@@ -1123,13 +1167,45 @@
             navigateTo('home');
         };
 
-        // COURSE LOGIC
+        // HOME LOGIC
         const loadHome = async () => {
+            // 1. Load Hero Customization
+            try {
+                const heroSnap = await getDoc(doc(db, "settings", "homepage_hero"));
+                const posterImg = document.getElementById('hero-poster-img');
+                const placeholder = document.getElementById('hero-placeholder');
+                const playBtn = document.getElementById('hero-play-btn');
+
+                if (heroSnap.exists()) {
+                    const data = heroSnap.data();
+                    
+                    if (data.posterUrl && posterImg) {
+                        posterImg.src = data.posterUrl;
+                        posterImg.classList.remove('hidden');
+                        if (placeholder) placeholder.classList.add('hidden');
+                    } else {
+                        if (posterImg) posterImg.classList.add('hidden');
+                        if (placeholder) placeholder.classList.remove('hidden');
+                    }
+
+                    if (data.videoUrl && playBtn) {
+                        playBtn.classList.remove('hidden');
+                        playBtn.onclick = () => showHeroVideo(data.videoUrl);
+                    } else if (playBtn) {
+                        playBtn.classList.add('hidden');
+                    }
+                } else {
+                    if (posterImg) posterImg.classList.add('hidden');
+                    if (placeholder) placeholder.classList.remove('hidden');
+                    if (playBtn) playBtn.classList.add('hidden');
+                }
+            } catch (e) { console.warn("Could not load hero settings", e); }
+
+            // 2. Load Trending Courses
             const list = document.getElementById('trending-courses-list');
             if (!list) return;
 
             try {
-                // Use a simpler query first to check connection
                 const coursesRef = collection(db, "courses");
                 const q = query(coursesRef, limit(3));
                 const snap = await getDocs(q);
@@ -1148,9 +1224,39 @@
                     list.appendChild(createCourseCard(d.id, d.data()));
                 });
             } catch (e) {
-                console.error("Home Load Error:", e);
+                console.error("Home Courses Load Error:", e);
                 list.innerHTML = `<div class="col-span-full p-6 bg-red-50 text-red-500 rounded-xl text-center text-sm">Connection Error: ${e.message}</div>`;
             }
+        };
+
+        window.showHeroVideo = (url) => {
+            const modal = document.getElementById('hero-video-modal');
+            const player = document.getElementById('hero-yt-player');
+            
+            let videoId = "";
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            if (match && match[2].length == 11) {
+                videoId = match[2];
+            } else if (url.length === 11) {
+                videoId = url;
+            }
+
+            if (videoId) {
+                player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            } else {
+                toast("Invalid YouTube URL", "error");
+            }
+        };
+
+        window.hideHeroVideo = () => {
+            const modal = document.getElementById('hero-video-modal');
+            const player = document.getElementById('hero-yt-player');
+            modal.classList.add('hidden');
+            player.src = "";
+            document.body.style.overflow = 'auto';
         };
 
         const loadCourses = async () => {
@@ -2001,6 +2107,35 @@
             loadAdminUsers();
             loadAdminCourses();
             loadAdminEnrollments();
+            loadHeroCustomization();
+        };
+
+        const loadHeroCustomization = async () => {
+            try {
+                const snap = await getDoc(doc(db, "settings", "homepage_hero"));
+                if (snap.exists()) {
+                    const data = snap.data();
+                    document.getElementById('hero-poster-input').value = data.posterUrl || '';
+                    document.getElementById('hero-video-input').value = data.videoUrl || '';
+                }
+            } catch (e) { console.error("Error loading hero settings", e); }
+        };
+
+        document.getElementById('hero-custom-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const poster = document.getElementById('hero-poster-input').value;
+            const video = document.getElementById('hero-video-input').value;
+
+            try {
+                await setDoc(doc(db, "settings", "homepage_hero"), {
+                    posterUrl: poster,
+                    videoUrl: video,
+                    updatedAt: serverTimestamp()
+                });
+                toast("Hero section updated!", "success");
+            } catch (err) {
+                toast("Error saving settings", "error");
+            }
         };
 
         const loadAdminUsers = async () => {
@@ -2500,6 +2635,7 @@
                 {id: 'course-modal', h: hideCourseForm},
                 {id: 'profile-modal', h: hideProfileEdit},
                 {id: 'assign-modal', h: hideAssignModal},
+                {id: 'hero-video-modal', h: hideHeroVideo},
                 {id: 'settings-modal', h: () => document.getElementById('settings-modal').classList.add('hidden')}
             ];
             
