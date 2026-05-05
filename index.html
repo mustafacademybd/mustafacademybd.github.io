@@ -1,1 +1,2266 @@
-Hello world
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mustafa Academy BD - AI EdTech</title>
+    <!-- Tailwind CSS v4 -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-deep: #1e40af;
+            --glass: rgba(255, 255, 255, 0.7);
+        }
+
+        body {
+            font-family: 'Inter', 'Hind Siliguri', sans-serif;
+        }
+
+        .glass-nav {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            background: var(--glass);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .page-transition {
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .spinner {
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        /* Profile Dropdown Shadow */
+        .dropdown-shadow {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* SVG Logo - Improved */
+        .logo-m {
+            fill: url(#logoGradient);
+        }
+        .logo-bg {
+            fill: #f1f5f9;
+        }
+
+        /* Hidden by default */
+        [data-page] {
+            display: none;
+        }
+        [data-page].active {
+            display: block;
+        }
+
+        /* Toast Styles */
+        #toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 9999;
+        }
+
+        .toast {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 transition-colors duration-300">
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="flex flex-col gap-3"></div>
+
+    <!-- Shared SVG Assets -->
+    <svg style="position: absolute; width: 0; height: 0; overflow: hidden;" version="1.1" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#2563eb;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#4f46e5;stop-opacity:1" />
+            </linearGradient>
+        </defs>
+    </svg>
+
+    <!-- Navbar -->
+    <nav class="glass-nav fixed top-0 w-full z-50 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center cursor-pointer" onclick="navigateTo('home')">
+                    <svg class="h-10 w-10" viewBox="0 0 100 100" filter="drop-shadow(0 2px 4px rgba(37, 99, 235, 0.2))">
+                        <rect width="100" height="100" rx="24" class="logo-bg" />
+                        <path class="logo-m" d="M30 70 V30 L50 50 L70 30 V70" stroke="url(#logoGradient)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+                        <circle cx="50" cy="65" r="4" fill="url(#logoGradient)" />
+                    </svg>
+                    <span class="ml-2 text-xl font-bold tracking-tight hidden sm:block">Mustafa Academy BD</span>
+                </div>
+
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#" onclick="navigateTo('home')" class="nav-link font-medium hover:text-blue-600 transition" data-i18n="home">Home</a>
+                    <a href="#" onclick="navigateTo('courses')" class="nav-link font-medium hover:text-blue-600 transition" data-i18n="courses">Courses</a>
+                    <a href="#" onclick="navigateTo('about')" class="nav-link font-medium hover:text-blue-600 transition" data-i18n="about">About</a>
+                </div>
+
+                <!-- Right Side Actions -->
+                <div class="flex items-center space-x-4">
+                    <div id="auth-buttons" class="hidden sm:flex items-center space-x-3">
+                        <button onclick="navigateTo('login')" class="px-4 py-2 text-sm font-medium hover:text-blue-600" data-i18n="login">Login</button>
+                        <button onclick="navigateTo('signup')" class="px-5 py-2 text-sm font-medium bg-blue-600 text-white rounded-full hover:bg-blue-700 transition shadow-md" data-i18n="signup">Sign Up</button>
+                    </div>
+
+                    <!-- User Dropdown (Logged In) -->
+                    <div id="user-menu" class="hidden relative">
+                        <button id="profile-btn" class="flex items-center focus:outline-none">
+                            <img id="user-avatar" src="https://ui-avatars.com/api/?name=User&background=2563eb&color=fff" class="h-9 w-9 rounded-full border-2 border-blue-100" alt="Profile">
+                        </button>
+                        
+                        <div id="profile-dropdown" class="hidden absolute right-0 mt-3 w-56 bg-white rounded-2xl dropdown-shadow py-2 border border-slate-100 transform origin-top-right transition duration-200">
+                            <div class="px-4 py-3 border-b border-slate-100">
+                                <p class="text-sm font-bold truncate" id="dropdown-user-name">User Name</p>
+                                <p class="text-xs text-slate-500 truncate" id="dropdown-user-email">user@example.com</p>
+                            </div>
+                            <div class="py-1">
+                                <a href="#" onclick="navigateTo('dashboard')" class="block px-4 py-2 text-sm hover:bg-slate-50 flex items-center">
+                                    <i class="fas fa-th-large w-5 mr-2 opacity-70"></i> <span data-i18n="dashboard">Dashboard</span>
+                                </a>
+                                <div id="admin-link-container" class="hidden">
+                                    <a href="#" onclick="navigateTo('admin')" class="block px-4 py-2 text-sm hover:bg-slate-50 flex items-center text-rose-500">
+                                        <i class="fas fa-shield-halved w-5 mr-2 opacity-70"></i> <span data-i18n="adminPanel">Admin Panel</span>
+                                    </a>
+                                </div>
+                                <a href="#" onclick="showProfileEdit()" class="block px-4 py-2 text-sm hover:bg-slate-50 flex items-center">
+                                    <i class="fas fa-user-edit w-5 mr-2 opacity-70"></i> <span data-i18n="editProfile">Edit Profile</span>
+                                </a>
+                                <a href="#" id="settings-trigger" class="block px-4 py-2 text-sm hover:bg-slate-50 flex items-center">
+                                    <i class="fas fa-cog w-5 mr-2 opacity-70"></i> <span data-i18n="settings">Settings</span>
+                                </a>
+                            </div>
+                            <div class="border-t border-slate-100 pt-1">
+                                <button onclick="handleLogout()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center">
+                                    <i class="fas fa-sign-out-alt w-5 mr-2 opacity-70"></i> <span data-i18n="logout">Logout</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Menu Button -->
+                    <button class="md:hidden text-2xl" id="mobile-menu-btn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-b border-slate-100">
+            <div class="px-4 pt-2 pb-6 space-y-1">
+                <a href="#" onclick="navigateTo('home')" class="block px-3 py-3 text-base font-medium rounded-lg hover:bg-slate-50" data-i18n="home">Home</a>
+                <a href="#" onclick="navigateTo('courses')" class="block px-3 py-3 text-base font-medium rounded-lg hover:bg-slate-50" data-i18n="courses">Courses</a>
+                <a href="#" onclick="navigateTo('about')" class="block px-3 py-3 text-base font-medium rounded-lg hover:bg-slate-50" data-i18n="about">About</a>
+                
+                <div id="mobile-auth-buttons" class="pt-4 border-t border-slate-100 flex flex-col gap-3">
+                    <button onclick="navigateTo('login')" class="w-full py-3 text-center font-medium border border-slate-200 rounded-xl" data-i18n="login">Login</button>
+                    <button onclick="navigateTo('signup')" class="w-full py-3 text-center font-medium bg-blue-600 text-white rounded-xl" data-i18n="signup">Sign Up</button>
+                </div>
+
+                <div id="mobile-user-buttons" class="hidden pt-4 border-t border-slate-100 space-y-1">
+                    <a href="#" onclick="navigateTo('dashboard')" class="block px-3 py-3 text-base font-bold text-blue-600 rounded-lg hover:bg-blue-50" data-i18n="dashboard">Dashboard</a>
+                    <a href="#" onclick="showProfileEdit()" class="block px-3 py-3 text-base font-medium rounded-lg hover:bg-slate-50" data-i18n="editProfile">Edit Profile</a>
+                    <button onclick="handleLogout()" class="w-full text-left px-3 py-3 text-base font-medium text-red-600 rounded-lg hover:bg-red-50" data-i18n="logout">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+        <div class="bg-white w-full max-w-md rounded-3xl relative overflow-hidden shadow-2xl">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h3 class="text-xl font-bold" data-i18n="settings">Settings</h3>
+                <button id="close-settings" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-6 space-y-6">
+                <!-- Language Selector -->
+                <div>
+                    <label class="block text-sm font-semibold mb-3" data-i18n="language">Language</label>
+                    <select id="lang-select" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 ring-blue-500 outline-none">
+                        <option value="bn">বাংলা (Bengali)</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+                <div class="pt-4 text-center border-t">
+                    <p class="text-xs text-slate-500" data-i18n="version">Mustafa Academy v1.0.0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <main class="pt-20 min-h-screen">
+
+        <!-- HOME PAGE -->
+        <section id="page-home" data-page class="active page-transition">
+            <!-- Hero -->
+            <div class="relative py-16 lg:py-24 px-4 overflow-hidden">
+                <div class="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-12">
+                    <div class="flex-1 text-center lg:text-left">
+                        <h1 class="text-4xl lg:text-6xl font-extrabold leading-tight mb-6" data-i18n="heroTitle">
+                            আপনার ভবিষ্যৎ শুরু হোক <span class="text-blue-600">AI</span> দিয়ে
+                        </h1>
+                        <p class="text-lg text-slate-600 mb-10 max-w-2xl mx-auto lg:mx-0" data-i18n="heroSub">
+                            আধুনিক প্রযুক্তির সাথে নিজেকে দক্ষ করে তুলুন। আমাদের প্রিমিয়াম কোর্সের মাধ্যমে শিখুন ইন্ডাস্ট্রি লেভেল স্কিল।
+                        </p>
+                        <div class="flex flex-wrap justify-center lg:justify-start gap-4">
+                            <button onclick="navigateTo('courses')" class="px-8 py-4 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition shadow-lg shadow-blue-500/30" data-i18n="viewCourses">View Courses</button>
+                            <button onclick="navigateTo('signup')" class="px-8 py-4 bg-white text-blue-600 border border-blue-100 font-bold rounded-2xl hover:bg-blue-50 transition" data-i18n="startLearning">Start Learning</button>
+                        </div>
+                    </div>
+                    <div class="flex-1 relative">
+                        <div class="w-full aspect-square max-w-lg mx-auto bg-gradient-to-tr from-blue-600 to-indigo-400 rounded-3xl rotate-3 absolute -z-10 blur-2xl opacity-20"></div>
+                        <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Learning" class="rounded-3xl shadow-2xl transform transition hover:-translate-y-2 duration-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trending Courses -->
+            <div class="py-16 bg-slate-50">
+                <div class="max-w-7xl mx-auto px-4">
+                    <div class="flex justify-between items-end mb-12">
+                        <div>
+                            <h2 class="text-3xl font-bold mb-2" data-i18n="trendingTitle">🔥 Trending Courses</h2>
+                            <p class="text-slate-500" data-i18n="trendingSub">Our most popular learning paths</p>
+                        </div>
+                        <button onclick="navigateTo('courses')" class="text-blue-600 font-bold hover:underline" data-i18n="seeAll">See All</button>
+                    </div>
+                    
+                    <div id="trending-courses-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <!-- Dynamic Content -->
+                        <div class="col-span-full py-12 text-center text-slate-400" id="home-loading">
+                            <i class="fas fa-circle-notch fa-spin text-3xl mb-4"></i>
+                            <p>Loading trending courses...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features -->
+            <div class="py-20 max-w-7xl mx-auto px-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="p-8 bg-white rounded-3xl border border-slate-100 text-center hover:shadow-xl transition">
+                        <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3" data-i18n="feat1">AI-based Learning</h3>
+                        <p class="text-slate-500" data-i18n="feat1Desc">Personalized paths powered by modern AI tools.</p>
+                    </div>
+                    <div class="p-8 bg-white rounded-3xl border border-slate-100 text-center hover:shadow-xl transition">
+                        <div class="w-16 h-16 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6">
+                            <i class="fas fa-language"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3" data-i18n="feat2">Bangla Explanations</h3>
+                        <p class="text-slate-500" data-i18n="feat2Desc">Complex topics explained in your native language.</p>
+                    </div>
+                    <div class="p-8 bg-white rounded-3xl border border-slate-100 text-center hover:shadow-xl transition">
+                        <div class="w-16 h-16 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-3" data-i18n="feat3">Lifetime Access</h3>
+                        <p class="text-slate-500" data-i18n="feat3Desc">Learn at your own pace with forever access.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CTA -->
+            <div class="py-16 px-4">
+                <div class="max-w-5xl mx-auto bg-blue-600 rounded-3xl p-12 text-center text-white relative overflow-hidden">
+                    <div class="relative z-10">
+                        <h2 class="text-3xl font-bold mb-6" data-i18n="ctaTitle">Need Help Buying?</h2>
+                        <p class="text-blue-100 mb-10 max-w-xl mx-auto" data-i18n="ctaSub">Contact us directly on WhatsApp for manual enrollment and support.</p>
+                        <a href="https://wa.me/8801788481222" target="_blank" class="px-10 py-4 bg-white text-blue-600 font-bold rounded-2xl hover:bg-slate-100 transition inline-flex items-center">
+                            <i class="fab fa-whatsapp text-2xl mr-3"></i> <span data-i18n="whatsappBtn">Chat on WhatsApp</span>
+                        </a>
+                    </div>
+                    <div class="absolute -top-12 -right-12 w-48 h-48 bg-blue-500 rounded-full blur-3xl opacity-50"></div>
+                    <div class="absolute -bottom-12 -left-12 w-48 h-48 bg-indigo-500 rounded-full blur-3xl opacity-50"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABOUT PAGE -->
+        <section id="page-about" data-page class="page-transition py-12 bg-white">
+            <div class="max-w-4xl mx-auto px-4">
+                <div class="space-y-12">
+                    <div class="text-center">
+                        <h1 class="text-3xl md:text-5xl font-extrabold text-slate-900 mb-6" data-i18n="aboutTitle">📖 About Us — Mustafa Academy BD</h1>
+                        <p class="text-lg text-slate-600 leading-relaxed" data-i18n="aboutIntro"></p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                        <div class="space-y-6">
+                            <p class="text-slate-600 leading-relaxed" data-i18n="aboutVision"></p>
+                            <p class="text-slate-600 leading-relaxed font-medium text-blue-600" data-i18n="aboutJourney"></p>
+                        </div>
+                        <div class="bg-blue-50 p-8 rounded-[2rem] border border-blue-100">
+                            <h3 class="text-xl font-bold text-blue-800 mb-6" data-i18n="aboutOfferTitle">🚀 What We Offer</h3>
+                            <ul class="space-y-4">
+                                <li class="flex items-start gap-3">
+                                    <i class="fas fa-check-circle text-blue-500 mt-1"></i>
+                                    <span class="text-slate-700 text-sm md:text-base" data-i18n="aboutOffer1"></span>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <i class="fas fa-check-circle text-blue-500 mt-1"></i>
+                                    <span class="text-slate-700 text-sm md:text-base" data-i18n="aboutOffer2"></span>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <i class="fas fa-check-circle text-blue-500 mt-1"></i>
+                                    <span class="text-slate-700 text-sm md:text-base" data-i18n="aboutOffer3"></span>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <i class="fas fa-check-circle text-blue-500 mt-1"></i>
+                                    <span class="text-slate-700 text-sm md:text-base" data-i18n="aboutOffer4"></span>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <i class="fas fa-check-circle text-blue-500 mt-1"></i>
+                                    <span class="text-slate-700 text-sm md:text-base" data-i18n="aboutOffer5"></span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-slate-100 pt-12">
+                        <div class="max-w-2xl mx-auto text-center">
+                            <h2 class="text-2xl font-bold text-slate-800 mb-4" data-i18n="aboutMissionTitle">🎯 Our Mission</h2>
+                            <p class="text-slate-600 mb-8" data-i18n="aboutMissionDesc"></p>
+                            
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <p class="font-bold text-blue-600" data-i18n="aboutBelieve1">Clear</p>
+                                </div>
+                                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <p class="font-bold text-blue-600" data-i18n="aboutBelieve2">Practical</p>
+                                </div>
+                                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <p class="font-bold text-blue-600" data-i18n="aboutBelieve3">Affordable</p>
+                                </div>
+                                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <p class="font-bold text-blue-600" data-i18n="aboutBelieve4">Useful</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-amber-50 p-8 rounded-[2rem] border border-amber-100 mt-12">
+                        <h3 class="text-xl font-bold text-amber-800 mb-4" data-i18n="aboutNoteTitle">💡 Important Note</h3>
+                        <p class="text-amber-900/70 mb-4" data-i18n="aboutNoteDesc1"></p>
+                        <ul class="list-disc list-inside text-amber-900/80 mb-6 space-y-2 font-medium">
+                            <li data-i18n="aboutNoteDesc2"></li>
+                        </ul>
+                        <p class="text-amber-900/70 italic text-sm" data-i18n="aboutNoteDesc3"></p>
+                    </div>
+
+                    <div class="text-center pt-8">
+                        <p class="text-slate-500 font-medium" data-i18n="aboutFooter"></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- COURSES PAGE -->
+        <section id="page-courses" data-page class="page-transition py-12">
+            <div class="max-w-7xl mx-auto px-4">
+                <h2 class="text-3xl font-bold mb-8" data-i18n="allCourses">All Courses</h2>
+                <div id="courses-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Dynamic List -->
+                </div>
+            </div>
+        </section>
+
+        <!-- DASHBOARD PAGE -->
+        <section id="page-dashboard" data-page class="page-transition py-12">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                    <div>
+                        <h2 class="text-3xl font-bold text-slate-800" data-i18n="myLearning">My Learning</h2>
+                        <p class="text-slate-500" data-i18n="welcomeBack">Continue where you left off</p>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="bg-blue-50 px-6 py-3 rounded-2xl border border-blue-100 text-center min-w-[120px]">
+                            <p class="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">Courses</p>
+                            <p class="text-xl font-bold text-blue-600" id="dash-stat-courses">0</p>
+                        </div>
+                        <div class="bg-green-50 px-6 py-3 rounded-2xl border border-green-100 text-center min-w-[120px]">
+                            <p class="text-[10px] font-bold text-green-400 uppercase tracking-widest mb-1">Completed</p>
+                            <p class="text-xl font-bold text-green-600" id="dash-stat-completed">0</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="enrolled-courses-list" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Dynamic List -->
+                </div>
+
+                <div id="no-enrollments" class="hidden text-center py-20">
+                    <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" class="h-32 mx-auto mb-6 opacity-20 grayscale" alt="Empty">
+                    <p class="text-xl font-medium text-slate-400" data-i18n="noCourses">You haven't enrolled in any courses yet.</p>
+                    <button onclick="navigateTo('courses')" class="mt-6 text-blue-600 font-bold">Browse Courses</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- LOGIN / SIGNUP PAGE -->
+        <section id="page-login" data-page class="page-transition py-12">
+            <div class="max-w-md mx-auto px-4">
+                <div class="bg-white p-8 rounded-3xl shadow-xl border border-slate-100">
+                    <h2 class="text-2xl font-bold mb-2 text-center" id="auth-title">Login</h2>
+                    <p class="text-slate-500 text-center mb-8" data-i18n="authSub">Welcome to Mustafa Academy</p>
+                    
+                    <form id="auth-form" class="space-y-5">
+                        <div id="signup-fields" class="hidden">
+                            <label class="block text-sm font-medium mb-2" data-i18n="fullName">Full Name</label>
+                            <input type="text" id="auth-name" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2" data-i18n="emailAddress">Email Address</label>
+                            <input type="email" id="auth-email" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 ring-blue-500">
+                        </div>
+                        <div>
+                            <div class="flex justify-between">
+                                <label class="block text-sm font-medium mb-2" data-i18n="password">Password</label>
+                                <a href="#" id="forgot-password" class="text-xs text-blue-600 hover:underline" data-i18n="forgot">Forgot?</a>
+                            </div>
+                            <input type="password" id="auth-password" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 ring-blue-500">
+                        </div>
+                        <button type="submit" id="auth-submit-btn" class="w-full py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition flex items-center justify-center">
+                            <span>Login</span>
+                        </button>
+                    </form>
+
+                    <div class="mt-6 relative">
+                        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
+                        <div class="relative flex justify-center text-xs uppercase"><span class="bg-white px-2 text-slate-500">Or continue with</span></div>
+                    </div>
+
+                    <button onclick="handleGoogleSignIn()" class="mt-6 w-full py-4 border border-slate-200 rounded-xl flex items-center justify-center gap-3 hover:bg-slate-50 transition">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c1.61-3.31 1.61-3.31 3.28-8.09z" fill="#4285F4"/>
+                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.16H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.84l3.66-2.75z" fill="#FBBC05"/>
+                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.16l3.66 2.75c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                        </svg>
+                        <span class="font-bold">Google</span>
+                    </button>
+
+                    <p class="mt-8 text-center text-sm">
+                        <span id="auth-footer-text">Don't have an account?</span>
+                        <a href="#" id="auth-toggle" class="text-blue-600 font-bold ml-1 hover:underline">Sign Up</a>
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- COURSE DETAILS PAGE -->
+        <section id="page-course-detail" data-page class="page-transition py-12">
+            <div id="course-detail-container" class="max-w-7xl mx-auto px-4">
+                <!-- Dynamic Content -->
+            </div>
+        </section>
+
+        <!-- LMS PAGE (PLAYER) -->
+        <section id="page-lms" data-page class="page-transition bg-slate-100 min-h-screen">
+            <div class="max-w-[1600px] mx-auto flex flex-col lg:flex-row h-full">
+                <!-- Video Player Area -->
+                <div class="flex-1 p-4 lg:p-8">
+                    <div class="sticky top-20">
+                        <div class="aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl mb-8">
+                            <iframe id="lms-video" class="w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                        <div class="px-2">
+                            <h2 id="lms-lesson-title" class="text-2xl lg:text-3xl font-bold mb-4">Lesson Title</h2>
+                            <div class="flex items-center gap-4 mb-8">
+                                <button id="mark-complete-btn" class="px-6 py-2 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition flex items-center">
+                                    <i class="fas fa-check-circle mr-2"></i> <span data-i18n="markComplete">Mark as Complete</span>
+                                </button>
+                                <span id="progress-indicator" class="text-sm font-medium px-4 py-2 bg-slate-200 rounded-xl">3/12 Lessons</span>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="bg-white p-6 rounded-3xl shadow-sm">
+                                    <h3 class="font-bold mb-3 flex items-center gap-2">
+                                        <i class="fas fa-info-circle text-blue-600"></i>
+                                        <span data-i18n="description">Description</span>
+                                    </h3>
+                                    <p id="lms-lesson-desc" class="text-slate-500 text-sm leading-relaxed">Lesson details here...</p>
+                                </div>
+                                <div class="bg-white p-6 rounded-3xl shadow-sm">
+                                    <h3 class="font-bold mb-3 flex items-center gap-2">
+                                        <i class="fas fa-link text-blue-600"></i>
+                                        <span>Resources</span>
+                                    </h3>
+                                    <div id="lms-lesson-resources" class="space-y-2">
+                                        <!-- Dynamic Resources -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Playlist Area -->
+                <div class="w-full lg:w-[400px] bg-white border-l border-slate-200 h-screen overflow-y-auto">
+                    <div class="p-6 border-b border-slate-100">
+                        <h3 id="lms-course-title" class="font-bold text-lg mb-1">Course Title</h3>
+                        <p class="text-xs text-slate-500 uppercase tracking-widest font-bold" data-i18n="courseContent">Course Content</p>
+                    </div>
+                    <div id="lms-playlist" class="divide-y divide-slate-100">
+                        <!-- Lessons list -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ADMIN PANEL PAGE -->
+        <section id="page-admin" data-page class="page-transition py-12">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="flex justify-between items-center mb-10">
+                    <h2 class="text-3xl font-bold" data-i18n="adminPanel">Admin Panel</h2>
+                    <div class="flex gap-3">
+                        <button onclick="switchAdminTab('users')" class="px-4 py-2 bg-slate-200 rounded-xl admin-tab-btn active" data-tab="users">Users</button>
+                        <button onclick="switchAdminTab('courses')" class="px-4 py-2 bg-slate-200 rounded-xl admin-tab-btn" data-tab="courses">Courses</button>
+                        <button onclick="switchAdminTab('enrollments')" class="px-4 py-2 bg-slate-200 rounded-xl admin-tab-btn" data-tab="enrollments">Enrollments</button>
+                    </div>
+                </div>
+
+                <!-- Admin Tabs -->
+                <div id="admin-users" class="admin-tab active">
+                    <div class="bg-white rounded-3xl border border-slate-100 overflow-hidden">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="p-4 font-bold text-sm">User</th>
+                                    <th class="p-4 font-bold text-sm">Role</th>
+                                    <th class="p-4 font-bold text-sm">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-users-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="admin-courses" class="admin-tab hidden">
+                    <div class="mb-6 flex justify-end">
+                        <button onclick="showCourseForm()" class="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30">
+                            <i class="fas fa-plus mr-2"></i> Add Course
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="admin-courses-list"></div>
+                </div>
+
+                <div id="admin-enrollments" class="admin-tab hidden">
+                   <div class="bg-white rounded-3xl border border-slate-100 overflow-hidden">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="p-4 font-bold text-sm">User</th>
+                                    <th class="p-4 font-bold text-sm">Course</th>
+                                    <th class="p-4 font-bold text-sm">Date</th>
+                                    <th class="p-4 font-bold text-sm">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-enrollments-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-slate-100 py-12 px-4 mt-auto">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+            <div class="flex items-center">
+                <svg class="h-10 w-10" viewBox="0 0 100 100">
+                    <rect width="100" height="100" rx="24" class="logo-bg" />
+                    <path class="logo-m" d="M30 70 V30 L50 50 L70 30 V70" stroke="url(#logoGradient)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+                </svg>
+                <span class="ml-3 font-bold text-lg">Mustafa Academy BD</span>
+            </div>
+            <p class="text-slate-500 text-sm">© 2024 Mustafa Academy BD. All rights reserved.</p>
+            <div class="flex gap-6 text-xl">
+                <a href="#" class="text-slate-400 hover:text-blue-600 transition"><i class="fab fa-facebook"></i></a>
+                <a href="#" class="text-slate-400 hover:text-rose-500 transition"><i class="fab fa-instagram"></i></a>
+                <a href="#" class="text-slate-400 hover:text-blue-400 transition"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="text-slate-400 hover:text-red-600 transition"><i class="fab fa-youtube"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- MODALS -->
+    
+    <!-- Course Form Modal -->
+    <div id="course-modal" class="fixed inset-0 z-[70] hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+        <div class="bg-white w-full max-w-2xl rounded-3xl relative overflow-hidden shadow-2xl">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h3 class="text-xl font-bold" id="course-modal-title">Add New Course</h3>
+                <button onclick="hideCourseForm()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="course-form" class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                <input type="hidden" id="course-edit-id">
+                <div>
+                    <label class="block text-sm font-bold mb-1">Title</label>
+                    <input type="text" id="course-title" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-1">Description</label>
+                    <textarea id="course-desc" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none min-h-[100px]"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold mb-1">Price (BDT)</label>
+                        <input type="number" id="course-price" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-1">Imgur Poster URL</label>
+                        <input type="url" id="course-image" placeholder="https://i.imgur.com/..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" id="course-free" class="w-5 h-5 rounded border-slate-300">
+                    <label for="course-free" class="ml-2 font-bold">Free Course</label>
+                </div>
+                <button type="submit" class="w-full py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition">Save Course</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lesson Form Modal -->
+    <div id="lesson-modal" class="fixed inset-0 z-[70] hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+        <div class="bg-white w-full max-w-xl rounded-3xl relative overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b flex justify-between items-center bg-white sticky top-0 z-10">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-800">Course Lectures</h3>
+                    <p class="text-xs text-slate-500 mt-1">Manage all videos and resources for this course</p>
+                </div>
+                <button onclick="hideLessonForm()" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="overflow-y-auto flex-1">
+                <div class="p-6 border-b bg-slate-50/50">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4" id="lecture-form-title">Add New Lecture</h4>
+                    <form id="lesson-form" class="space-y-4">
+                        <input type="hidden" id="lesson-course-id">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <input type="text" id="lesson-title" placeholder="Lecture Title (e.g. Intro to AI)" required class="w-full p-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 ring-blue-500 transition">
+                            <input type="url" id="lesson-url" placeholder="YouTube URL (watch?v=...)" required class="w-full p-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 ring-blue-500 transition">
+                        </div>
+                        <textarea id="lesson-desc-field" placeholder="What will students learn in this lecture?" class="w-full p-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 ring-blue-500 transition min-h-[80px]"></textarea>
+                        <input type="text" id="lesson-resources" placeholder="Resource Link (Drive, PDF, GitHub - Optional)" class="w-full p-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 ring-blue-500 transition">
+                        <div class="flex gap-2">
+                            <button type="submit" class="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition shadow-md shadow-blue-500/20">
+                                <i class="fas fa-plus-circle mr-2"></i> Save Lecture
+                            </button>
+                            <button type="button" id="cancel-lesson-edit" class="hidden px-6 py-3 bg-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-300 transition">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="p-6">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Existing Lectures</h4>
+                    <div id="lesson-list-admin" class="space-y-1">
+                        <!-- Lessons list dynamically populated -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Course Modal -->
+    <div id="assign-modal" class="fixed inset-0 z-[70] hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+        <div class="bg-white w-full max-w-md rounded-3xl relative overflow-hidden shadow-2xl">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h3 class="text-xl font-bold">Assign Course</h3>
+                <button onclick="hideAssignModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-6">
+                <p class="mb-4 text-sm text-slate-500">Assign course access to <span id="assign-user-name" class="font-bold text-slate-800"></span></p>
+                <div class="space-y-3" id="assign-courses-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="profile-modal" class="fixed inset-0 z-[70] hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+        <div class="bg-white w-full max-w-md rounded-3xl relative overflow-hidden shadow-2xl">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h3 class="text-xl font-bold" data-i18n="editProfile">Edit Profile</h3>
+                <button onclick="hideProfileEdit()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="profile-edit-form" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-bold mb-1" data-i18n="fullName">Full Name</label>
+                    <input type="text" id="edit-user-name" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                </div>
+                <button type="submit" class="w-full py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition" data-i18n="saveChanges">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- FIREBASE SDKS -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { 
+            getAuth, 
+            signInWithEmailAndPassword, 
+            createUserWithEmailAndPassword, 
+            signOut, 
+            onAuthStateChanged,
+            GoogleAuthProvider,
+            signInWithPopup,
+            sendPasswordResetEmail
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            doc, 
+            setDoc, 
+            getDoc, 
+            getDocs, 
+            collection, 
+            query, 
+            where, 
+            orderBy, 
+            addDoc, 
+            updateDoc, 
+            deleteDoc, 
+            onSnapshot,
+            serverTimestamp,
+            increment,
+            limit
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyAJ4N-IWJ3XoBNGQiPSisCR_EXuG3JZL5c",
+            authDomain: "mustafacadeny.firebaseapp.com",
+            projectId: "mustafacadeny",
+            storageBucket: "mustafacadeny.firebasestorage.app",
+            messagingSenderId: "172189648918",
+            appId: "1:172189648918:web:98feca432f7f45567f0d37"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // TRANSLATIONS
+        const translations = {
+            bn: {
+                home: "হোম",
+                courses: "কোর্সসমূহ",
+                about: "আমাদের সম্পর্কে",
+                login: "লগইন",
+                signup: "সাইন আপ",
+                dashboard: "ড্যাশবোর্ড",
+                adminPanel: "এডমিন প্যানেল",
+                settings: "সেটিংস",
+                logout: "লগআউট",
+                heroTitle: "আপনার ভবিষ্যৎ শুরু হোক AI দিয়ে",
+                heroSub: "আধুনিক প্রযুক্তির সাথে নিজেকে দক্ষ করে তুলুন। আমাদের প্রিমিয়াম কোর্সের মাধ্যমে শিখুন ইন্ডাস্ট্রি লেভেল স্কিল।",
+                viewCourses: "কোর্সগুলো দেখুন",
+                startLearning: "শিখা শুরু করুন",
+                trendingTitle: "🔥 জনপ্রিয় কোর্সসমূহ",
+                trendingSub: "সবচেয়ে বেশি পছন্দের লার্নিং পাথ",
+                seeAll: "সব দেখুন",
+                feat1: "AI ভিত্তিক শিক্ষা",
+                feat1Desc: "আধুনিক AI টুলের মাধ্যমে ব্যক্তিগত লার্নিং পাথ।",
+                feat2: "বাংলা ব্যাখ্যা",
+                feat2Desc: "জটিল বিষয়গুলো আপনার মাতৃভাষায় সহজ ব্যাখ্যা।",
+                feat3: "লাইফটাইম অ্যাক্সেস",
+                feat3Desc: "নিজের গতিতে শিখুন এবং সারাজীবন এক্সেস পান।",
+                ctaTitle: "কোর্স কিনতে সমস্যা হচ্ছে?",
+                ctaSub: "ম্যানুয়াল এনরোলমেন্ট এবং সাপোর্টের জন্য সরাসরি হোয়াটসঅ্যাপে যোগাযোগ করুন।",
+                whatsappBtn: "হোয়াটসঅ্যাপে চ্যাট করুন",
+                allCourses: "সব কোর্স",
+                myLearning: "আমার শিক্ষা",
+                welcomeBack: "যেখান থেকে শেষ করেছিলেন সেখান থেকেই শুরু করুন",
+                noCourses: "আপনি এখনো কোনো কোর্সে এনরোল করেননি।",
+                language: "ভাষা",
+                version: "সংস্করণ ১.০.০",
+                authSub: "মুস্তফা একাডেমিতে আপনাকে স্বাগতম",
+                noAccount: "অ্যাকাউন্ট নেই?",
+                courseContent: "কোর্স কনটেন্ট",
+                markComplete: "সম্পন্ন হয়েছে",
+                description: "বিস্তারিত",
+                reviews: "রিভিউ",
+                enrollNow: "এখনই কিনুন",
+                buyViaWA: "WhatsApp এ কিনুন",
+                enrolled: "এনরোল করা হয়েছে",
+                free: "ফ্রি",
+                rating: "রেটিং",
+                noReviews: "কোনো রিভিউ নেই"
+            },
+            en: {
+                home: "Home",
+                courses: "Courses",
+                about: "About",
+                login: "Login",
+                signup: "Sign Up",
+                dashboard: "Dashboard",
+                adminPanel: "Admin Panel",
+                settings: "Settings",
+                logout: "Logout",
+                heroTitle: "Start Your Future with AI",
+                heroSub: "Master modern technology. Learn industry-level skills through our premium courses.",
+                viewCourses: "View Courses",
+                startLearning: "Start Learning",
+                trendingTitle: "🔥 Trending Courses",
+                trendingSub: "Our most popular learning paths",
+                seeAll: "See All",
+                feat1: "AI-based Learning",
+                feat1Desc: "Personalized paths powered by modern AI tools.",
+                feat2: "Bangla Explanations",
+                feat2Desc: "Complex topics explained in your native language.",
+                feat3: "Lifetime Access",
+                feat3Desc: "Learn at your own pace with forever access.",
+                ctaTitle: "Need Help Buying?",
+                ctaSub: "Contact us directly on WhatsApp for manual enrollment and support.",
+                whatsappBtn: "Chat on WhatsApp",
+                allCourses: "All Courses",
+                myLearning: "My Learning",
+                welcomeBack: "Continue where you left off",
+                noCourses: "You haven't enrolled in any courses yet.",
+                language: "Language",
+                version: "Version 1.0.0",
+                authSub: "Welcome to Mustafa Academy",
+                noAccount: "Don't have an account?",
+                courseContent: "Course Content",
+                markComplete: "Mark Complete",
+                description: "Description",
+                reviews: "Reviews",
+                enrollNow: "Enroll Now",
+                buyViaWA: "Buy via WhatsApp",
+                enrolled: "Enrolled",
+                free: "Free",
+                rating: "Rating",
+                noReviews: "No reviews yet",
+                editProfile: "Edit Profile",
+                saveChanges: "Save Changes",
+                fullName: "Full Name",
+                resources: "Resources",
+                aboutTitle: "📖 About Us — Mustafa Academy BD",
+                aboutIntro: "Mustafa Academy BD is a modern, AI-powered learning platform built with one simple goal: to make practical, real-world skills accessible to anyone, anywhere.",
+                aboutVision: "We are not a traditional institution. We are a new, growing digital academy focused on hands-on learning in technology, AI, and future-ready skills. Everything here is designed to be simple, effective, and directly useful in real life.",
+                aboutJourney: "At the moment, we are a completely new platform — no students, no completed courses, just a vision in progress. But that’s exactly what makes this journey exciting. You’re not joining an already crowded system; you’re becoming part of the beginning of something built from scratch.",
+                aboutOfferTitle: "🚀 What We Offer",
+                aboutOffer1: "AI-based practical learning courses",
+                aboutOffer2: "Step-by-step Bangla + English explanations",
+                aboutOffer3: "Real-world skill development (not just theory)",
+                aboutOffer4: "Lifetime access to purchased content",
+                aboutOffer5: "Continuous updates as the platform grows",
+                aboutMissionTitle: "🎯 Our Mission",
+                aboutMissionDesc: "To build a learning space where students in Bangladesh (and beyond) can gain real skills without confusion, complexity, or outdated methods.",
+                aboutBelieve: "We believe learning should feel:",
+                aboutBelieve1: "Clear",
+                aboutBelieve2: "Practical",
+                aboutBelieve3: "Affordable",
+                aboutBelieve4: "And actually useful in real life",
+                aboutNoteTitle: "💡 Important Note",
+                aboutNoteDesc1: "To access any course, users must either:",
+                aboutNoteDesc2: "View course details, or Purchase access via WhatsApp",
+                aboutNoteDesc3: "Everything is structured to keep the system simple, direct, and efficient.",
+                aboutFooter: "Mustafa Academy BD is just getting started — and every learner who joins now becomes part of its foundation."
+            }
+        };
+
+        // Translations for BN
+        translations.bn.editProfile = "প্রোফাইল আপডেট";
+        translations.bn.saveChanges = "পরিবর্তন সংরক্ষণ করুন";
+        translations.bn.fullName = "পুরো নাম";
+        translations.bn.resources = "রিসোর্সসমূহ";
+        translations.bn.emailAddress = "ইমেইল অ্যাড্রেস";
+        translations.bn.password = "পাসওয়ার্ড";
+        translations.bn.forgot = "ভুলে গেছেন?";
+        translations.bn.alreadyAccount = "অ্যাকাউন্ট আছে?";
+        
+        translations.bn.aboutTitle = "📖 আমাদের সম্পর্কে — মোস্তফা একাডেমি বিডি";
+        translations.bn.aboutIntro = "মোস্তফা একাডেমি বিডি হলো একটি আধুনিক, এআই-চালিত লার্নিং প্ল্যাটফর্ম যা একটি সহজ লক্ষ্য নিয়ে তৈরি করা হয়েছে: ব্যবহারিক এবং বাস্তব জীবনের দক্ষতা যে কারো জন্য, যে কোনো জায়গায় সহজলভ্য করা।";
+        translations.bn.aboutVision = "আমরা কোনো প্রথাগত প্রতিষ্ঠান নই। আমরা একটি নতুন, ক্রমবর্ধমান ডিজিটাল একাডেমি যা প্রযুক্তি, এআই এবং ভবিষ্যতের জন্য প্রয়োজনীয় দক্ষতার ব্যবহারিক শিক্ষার ওপর গুরুত্ব দেয়। এখানে সবকিছু সহজ, কার্যকর এবং বাস্তব জীবনে সরাসরি দরকারী হওয়ার জন্য ডিজাইন করা হয়েছে।";
+        translations.bn.aboutJourney = "বর্তমানে আমরা একটি সম্পূর্ণ নতুন প্ল্যাটফর্ম — কোনো শিক্ষার্থী নেই, কোনো সম্পন্ন কোর্স নেই, শুধু একটি চলমান লক্ষ্য। কিন্তু এটাই এই যাত্রাকে রোমাঞ্চকর করে তোলে। আপনি একটি ভিড় করা সিস্টেমে যোগ দিচ্ছেন না; আপনি একদম শূন্য থেকে তৈরি হওয়া কিছুর শুরুর অংশ হতে চলেছেন।";
+        translations.bn.aboutOfferTitle = "🚀 আমরা যা অফার করি";
+        translations.bn.aboutOffer1 = "এআই-ভিত্তিক ব্যবহারিক লার্নিং কোর্স";
+        translations.bn.aboutOffer2 = "ধাপে ধাপে বাংলা + ইংরেজি ব্যাখ্যা";
+        translations.bn.aboutOffer3 = "বাস্তব বিশ্বের দক্ষতা উন্নয়ন (শুধু তাত্ত্বিক নয়)";
+        translations.bn.aboutOffer4 = "কেনা কন্টেন্টে আজীবন অ্যাক্সেস";
+        translations.bn.aboutOffer5 = "প্ল্যাটফর্ম বাড়ার সাথে সাথে নিরবিচ্ছিন্ন আপডেট";
+        translations.bn.aboutMissionTitle = "🎯 আমাদের লক্ষ্য";
+        translations.bn.aboutMissionDesc = "বাংলাদেশে (এবং এর বাইরেও) শিক্ষার্থীদের জন্য এমন একটি লার্নিং স্পেস তৈরি করা যেখানে তারা বিভ্রান্তি, জটিলতা বা সেকেলে পদ্ধতি ছাড়াই প্রকৃত দক্ষতা অর্জন করতে পারে।";
+        translations.bn.aboutBelieve = "আমরা বিশ্বাস করি শিক্ষা হওয়া উচিত:";
+        translations.bn.aboutBelieve1 = "স্বচ্ছ";
+        translations.bn.aboutBelieve2 = "ব্যবহারিক";
+        translations.bn.aboutBelieve3 = "সাশ্রয়ী";
+        translations.bn.aboutBelieve4 = "এবং বাস্তব জীবনে কার্যকর";
+        translations.bn.aboutNoteTitle = "💡 গুরুত্বপূর্ণ নোট";
+        translations.bn.aboutNoteDesc1 = "যেকোনো কোর্স অ্যাক্সেস করতে, ব্যবহারকারীদের অবশ্যই:";
+        translations.bn.aboutNoteDesc2 = "কোর্সের বিবরণ দেখতে হবে, অথবা হোয়াটসঅ্যাপের মাধ্যমে অ্যাক্সেস কিনতে হবে।";
+        translations.bn.aboutNoteDesc3 = "সিস্টেমটি সহজ, সরাসরি এবং দক্ষ রাখার জন্য সবকিছু সাজানো হয়েছে।";
+        translations.bn.aboutFooter = "মোস্তফা একাডেমি বিডি কেবল শুরু হচ্ছে — এবং এখন যারা যোগ দেবেন তারা এর ফাউন্ডেশনের অংশ হবেন।";
+
+        translations.en.emailAddress = "Email Address";
+        translations.en.password = "Password";
+        translations.en.forgot = "Forgot?";
+        translations.en.alreadyAccount = "Already have an account?";
+
+        // STATE
+        let currentUser = null;
+        let userData = null;
+        let currentLang = localStorage.getItem('lang') || 'bn';
+        let currentAuthMode = 'login';
+
+        // UTILS
+        const toast = (msg, type = 'info') => {
+            const container = document.getElementById('toast-container');
+            const t = document.createElement('div');
+            const bg = type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600';
+            t.className = `toast ${bg} text-white px-6 py-4 rounded-2xl shadow-xl flex items-center gap-3 min-w-[300px] mb-3`;
+            t.innerHTML = `
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
+                <span class="font-medium">${msg}</span>
+            `;
+            container.appendChild(t);
+            setTimeout(() => {
+                t.style.opacity = '0';
+                t.style.transform = 'translateX(20px)';
+                setTimeout(() => t.remove(), 300);
+            }, 4000);
+        };
+
+        const updateLanguageUI = () => {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[currentLang][key]) {
+                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                        el.placeholder = translations[currentLang][key];
+                    } else {
+                        el.innerText = translations[currentLang][key];
+                    }
+                }
+            });
+            document.documentElement.lang = currentLang;
+            document.getElementById('lang-select').value = currentLang;
+            
+            // Special handling for auth mode toggle state
+            setAuthMode(currentAuthMode);
+        };
+
+        // NAVIGATION
+        window.navigateTo = (pageId) => {
+            // Handle Login/Signup special case
+            if (pageId === 'login' || pageId === 'signup') {
+                setAuthMode(pageId);
+                pageId = 'login'; // Both use page-login section
+            }
+
+            document.querySelectorAll('[data-page]').forEach(p => p.classList.remove('active'));
+            const target = document.getElementById(`page-${pageId}`);
+            if (target) {
+                target.classList.add('active');
+                window.scrollTo(0, 0);
+                
+                // Close mobile menu
+                document.getElementById('mobile-menu').classList.add('hidden');
+
+                // Page Specific Loads
+                if (pageId === 'home') loadHome();
+                if (pageId === 'courses') loadCourses();
+                if (pageId === 'dashboard') loadDashboard();
+                if (pageId === 'admin') loadAdmin();
+            }
+        };
+
+        const setAuthMode = (mode) => {
+            currentAuthMode = mode;
+            const title = document.getElementById('auth-title');
+            const submit = document.getElementById('auth-submit-btn').querySelector('span');
+            const footer = document.getElementById('auth-footer-text');
+            const toggle = document.getElementById('auth-toggle');
+            const signupFields = document.getElementById('signup-fields');
+
+            if (mode === 'signup') {
+                title.innerText = translations[currentLang].signup;
+                if(submit) submit.innerText = translations[currentLang].signup;
+                footer.innerText = translations[currentLang].alreadyAccount;
+                toggle.innerText = translations[currentLang].login;
+                signupFields.classList.remove('hidden');
+            } else {
+                title.innerText = translations[currentLang].login;
+                if(submit) submit.innerText = translations[currentLang].login;
+                footer.innerText = translations[currentLang].noAccount;
+                toggle.innerText = translations[currentLang].signup;
+                signupFields.classList.add('hidden');
+            }
+        };
+
+        // AUTH
+        const handleAuthToggle = (e) => {
+            e.preventDefault();
+            const isLogin = document.getElementById('auth-title').innerText === 'Login' || document.getElementById('auth-title').innerText === 'লগইন';
+            setAuthMode(isLogin ? 'signup' : 'login');
+        };
+
+        const handleAuthSubmit = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const name = document.getElementById('auth-name').value;
+            const isLogin = document.getElementById('auth-title').innerText === 'Login' || document.getElementById('auth-title').innerText === 'লগইন';
+            
+            const btn = document.getElementById('auth-submit-btn');
+            btn.innerHTML = '<div class="spinner"></div>';
+            btn.disabled = true;
+
+            try {
+                if (isLogin) {
+                    await signInWithEmailAndPassword(auth, email, password);
+                    toast(currentLang === 'bn' ? 'সাফল্যের সাথে লগইন হয়েছে!' : 'Login successful!', 'success');
+                    navigateTo('home');
+                } else {
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    await setDoc(doc(db, "users", userCredential.user.uid), {
+                        name: name,
+                        email: email,
+                        role: 'user',
+                        createdAt: serverTimestamp()
+                    });
+                    toast(currentLang === 'bn' ? 'অ্যাকাউন্ট তৈরি হয়েছে!' : 'Account created successfully!', 'success');
+                    navigateTo('home');
+                }
+            } catch (err) {
+                console.error(err);
+                toast(err.message, 'error');
+            } finally {
+                btn.innerHTML = `<span>${isLogin ? (currentLang === 'bn' ? 'লগইন' : 'Login') : (currentLang === 'bn' ? 'সাইন আপ' : 'Sign Up')}</span>`;
+                btn.disabled = false;
+            }
+        };
+
+        window.handleGoogleSignIn = async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                
+                if (!userDoc.exists()) {
+                    await setDoc(doc(db, "users", user.uid), {
+                        name: user.displayName,
+                        email: user.email,
+                        role: 'user',
+                        createdAt: serverTimestamp()
+                    });
+                }
+                toast(currentLang === 'bn' ? 'গুগল দিয়ে লগইন সফল!' : 'Google Sign-in successful!', 'success');
+                navigateTo('home');
+            } catch (err) {
+                toast(err.message, 'error');
+            }
+        };
+
+        window.handleLogout = async () => {
+            await signOut(auth);
+            toast(currentLang === 'bn' ? 'লগআউট হয়েছে' : 'Logged out', 'info');
+            navigateTo('home');
+        };
+
+        // COURSE LOGIC
+        const loadHome = async () => {
+            const list = document.getElementById('trending-courses-list');
+            try {
+                const q = query(collection(db, "courses"), orderBy("createdAt", "desc"), limit(3));
+                const snap = await getDocs(q);
+                list.innerHTML = '';
+                if (snap.empty) {
+                    list.innerHTML = '<p class="col-span-full text-center py-10 opacity-50">No courses available yet.</p>';
+                    return;
+                }
+                snap.forEach(d => {
+                    const c = d.data();
+                    list.appendChild(createCourseCard(d.id, c));
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        };
+
+        const loadCourses = async () => {
+            const grid = document.getElementById('courses-grid');
+            grid.innerHTML = '<div class="col-span-full py-12 text-center"><div class="spinner border-blue-600 border-t-transparent mx-auto"></div></div>';
+            try {
+                const snap = await getDocs(collection(db, "courses"));
+                grid.innerHTML = '';
+                if (snap.empty) {
+                    grid.innerHTML = `
+                        <div class="col-span-full py-20 text-center">
+                            <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" class="h-24 mx-auto mb-6 opacity-20 grayscale">
+                            <p class="text-slate-400 font-medium">No courses available at the moment. Check back later!</p>
+                        </div>
+                    `;
+                    return;
+                }
+                snap.forEach(d => {
+                    grid.appendChild(createCourseCard(d.id, d.data()));
+                });
+            } catch (e) {
+                toast("Error loading courses", "error");
+            }
+        };
+
+        const createCourseCard = (id, c) => {
+            const div = document.createElement('div');
+            div.className = "bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all group cursor-pointer";
+            div.onclick = () => showCourseDetail(id);
+            div.innerHTML = `
+                <div class="relative h-48 overflow-hidden">
+                    <img src="${c.posterImage || 'https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?auto=format&fit=crop&w=800&q=80'}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" alt="${c.title}">
+                    <div class="absolute top-4 right-4 bg-white/90 px-3 py-1 rounded-full text-xs font-bold text-blue-600">
+                        ${c.isFree ? 'FREE' : '৳' + c.price}
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">COURSE</span>
+                        <div class="ml-auto flex items-center gap-1 text-amber-500 text-xs">
+                            <i class="fas fa-star"></i> <span>${c.averageRating ? c.averageRating.toFixed(1) : 'New'}</span>
+                        </div>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 group-hover:text-blue-600 transition">${c.title}</h3>
+                    <p class="text-slate-500 text-sm line-clamp-2 mb-6">${c.description}</p>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center text-[10px] font-bold text-blue-600">M</div>
+                            <span class="text-xs text-slate-400 font-medium">Mustafa Academy</span>
+                        </div>
+                        <span class="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">LIVE</span>
+                    </div>
+                </div>
+            `;
+            return div;
+        };
+
+        window.showCourseDetail = async (id) => {
+            navigateTo('course-detail');
+            const container = document.getElementById('course-detail-container');
+            container.innerHTML = '<div class="py-20 text-center"><div class="spinner border-blue-600 mx-auto"></div><p class="mt-4 text-slate-500">Loading course details...</p></div>';
+            
+            try {
+                const courseDocRef = doc(db, "courses", id);
+                const docSnap = await getDoc(courseDocRef);
+                
+                if (!docSnap.exists()) {
+                    container.innerHTML = '<div class="py-20 text-center text-red-500 font-bold">Course not found.</div>';
+                    return;
+                }
+                
+                const c = docSnap.data();
+                
+                // Check enrollment
+                let isEnrolled = false;
+                if (currentUser) {
+                    try {
+                        const enrollSnap = await getDocs(query(collection(db, "enrollments"), where("userId", "==", currentUser.uid), where("courseId", "==", id)));
+                        isEnrolled = !enrollSnap.empty;
+                    } catch (err) {
+                        console.error("Enrollment check failed:", err);
+                    }
+                }
+
+                // Get lesson count
+                let lessonCount = 0;
+                try {
+                    const lessonSnap = await getDocs(query(collection(db, "lessons"), where("courseId", "==", id)));
+                    lessonCount = lessonSnap.size;
+                } catch (err) {
+                    console.error("Lesson count fetch failed:", err);
+                }
+
+                // Generate Review Section HTML separately to avoid template nesting issues
+                let reviewFormHtml = '';
+                if (currentUser && isEnrolled) {
+                    reviewFormHtml = `
+                        <div class="bg-slate-50 p-6 rounded-3xl border border-dashed border-slate-200">
+                            <h4 class="font-bold mb-4">Leave a Review</h4>
+                            <div class="flex gap-2 mb-4 text-xl" id="rating-stars">
+                                <i class="far fa-star cursor-pointer text-amber-500" onclick="setRating(1)"></i>
+                                <i class="far fa-star cursor-pointer text-amber-500" onclick="setRating(2)"></i>
+                                <i class="far fa-star cursor-pointer text-amber-500" onclick="setRating(3)"></i>
+                                <i class="far fa-star cursor-pointer text-amber-500" onclick="setRating(4)"></i>
+                                <i class="far fa-star cursor-pointer text-amber-500" onclick="setRating(5)"></i>
+                            </div>
+                            <textarea id="review-comment" class="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none" placeholder="Share your experience..."></textarea>
+                            <button onclick="submitReview('${id}')" class="mt-4 px-6 py-3 bg-blue-600 text-white font-bold rounded-xl">Submit Review</button>
+                        </div>
+                    `;
+                }
+
+                // Enrollment/Buy Button Logic
+                let actionBtnHtml = '';
+                if (isEnrolled) {
+                    actionBtnHtml = `
+                        <button onclick="startLearning('${id}')" class="w-full py-5 bg-green-600 text-white font-bold rounded-2xl hover:bg-green-700 transition shadow-lg shadow-green-500/20">
+                            <i class="fas fa-play mr-2"></i> <span data-i18n="startLearning">Start Learning</span>
+                        </button>
+                    `;
+                } else {
+                    actionBtnHtml = `
+                        <a href="https://wa.me/8801788481222?text=I%20want%20to%20buy%20${encodeURIComponent(c.title || 'Course')}" target="_blank" class="block w-full text-center py-5 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition shadow-lg shadow-blue-500/20 mb-4">
+                            <i class="fab fa-whatsapp mr-2"></i> <span data-i18n="buyViaWA">Buy via WhatsApp</span>
+                        </a>
+                        <p class="text-xs text-center text-slate-400">Manual enrollment after payment confirmation</p>
+                    `;
+                }
+
+                container.innerHTML = `
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                        <div class="lg:col-span-2">
+                            <div class="relative rounded-[2.5rem] overflow-hidden shadow-2xl mb-12 bg-slate-200">
+                                <img src="${c.posterImage || 'https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?auto=format&fit=crop&w=800&q=80'}" class="w-full aspect-video object-cover" alt="${c.title || 'Course'}">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex items-end p-6 md:p-10">
+                                    <div>
+                                        <h1 class="text-3xl md:text-4xl font-bold text-white mb-4">${c.title || 'Untitled Course'}</h1>
+                                        <div class="flex flex-wrap items-center gap-4 md:gap-6 text-white/80 text-sm">
+                                            <span class="flex items-center gap-2"><i class="fas fa-video text-blue-400"></i> ${lessonCount} Lessons</span>
+                                            <span class="flex items-center gap-2"><i class="fas fa-certificate text-blue-400"></i> Lifetime Access</span>
+                                            <span class="flex items-center gap-2"><i class="fas fa-star text-amber-400"></i> ${c.averageRating ? Number(c.averageRating).toFixed(1) : 'New'}</span>
+                                        </div>
+                                    </div>
+                                    ${userData && userData.role === 'admin' ? `
+                                        <div class="ml-auto flex gap-2">
+                                            <button onclick="showLessonForm('${id}')" class="p-3 bg-white/20 hover:bg-white/40 text-white rounded-xl backdrop-blur-md transition" title="Manage Lessons">
+                                                <i class="fas fa-list-ol"></i>
+                                            </button>
+                                            <button onclick="editCourse('${id}')" class="p-3 bg-white/20 hover:bg-white/40 text-white rounded-xl backdrop-blur-md transition" title="Edit Course">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-12">
+                                <div>
+                                    <h2 class="text-2xl font-bold mb-6" data-i18n="description">Description</h2>
+                                    <div class="text-slate-600 leading-relaxed whitespace-pre-wrap">
+                                        ${c.description || 'No description provided.'}
+                                    </div>
+                                </div>
+
+                                <div id="review-section">
+                                    <h2 class="text-2xl font-bold mb-8" data-i18n="reviews">Reviews</h2>
+                                    <div id="reviews-list" class="space-y-6 mb-8"></div>
+                                    ${reviewFormHtml}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="lg:col-span-1">
+                            <div class="sticky top-28 bg-white p-8 rounded-[2rem] border border-slate-100 shadow-xl">
+                                <div class="mb-8">
+                                    <p class="text-slate-400 text-sm font-bold uppercase tracking-widest mb-1">Course Price</p>
+                                    <h3 class="text-4xl font-extrabold text-slate-900">${c.isFree ? (currentLang === 'bn' ? 'ফ্রি' : 'Free') : '৳' + c.price}</h3>
+                                </div>
+                                
+                                <div class="space-y-4 mb-8">
+                                    <div class="flex items-center gap-3 text-slate-600">
+                                        <i class="fas fa-check-circle text-green-500"></i> Full Lifetime Access
+                                    </div>
+                                    <div class="flex items-center gap-3 text-slate-600">
+                                        <i class="fas fa-check-circle text-green-500"></i> Certificate of Completion
+                                    </div>
+                                    <div class="flex items-center gap-3 text-slate-600">
+                                        <i class="fas fa-check-circle text-green-500"></i> Mobile & TV Access
+                                    </div>
+                                </div>
+
+                                ${actionBtnHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Load reviews after rendering basic structure
+                loadReviews(id);
+                updateLanguageUI();
+                
+            } catch (err) {
+                console.error("Critical error in showCourseDetail:", err);
+                container.innerHTML = `<div class="py-20 text-center text-red-500 font-bold">An error occurred while loading the course: ${err.message}</div>`;
+            }
+        };
+
+        // LMS LOGIC
+        let currentLessonId = null;
+        let lmsLessons = [];
+        
+        window.startLearning = async (courseId) => {
+            navigateTo('lms');
+            const playlist = document.getElementById('lms-playlist');
+            playlist.innerHTML = '<div class="p-6 text-center spinner border-blue-600 mx-auto"></div>';
+            
+            try {
+                const q = query(collection(db, "lessons"), where("courseId", "==", courseId));
+                const snap = await getDocs(q);
+                lmsLessons = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                lmsLessons.sort((a, b) => (a.order || 0) - (b.order || 0));
+                
+                if (lmsLessons.length === 0) {
+                    playlist.innerHTML = '<p class="p-6 opacity-50">No lessons added yet.</p>';
+                    return;
+                }
+
+                // Load progress
+                const progSnap = await getDoc(doc(db, "progress", `${currentUser.uid}_${courseId}`));
+                let lastWatchedId = lmsLessons[0].id;
+                let completedLessons = [];
+                if (progSnap.exists()) {
+                    const data = progSnap.data();
+                    lastWatchedId = data.lastLessonId || lastWatchedId;
+                    completedLessons = data.completedLessons || [];
+                }
+
+                renderPlaylist(courseId, completedLessons);
+                playLesson(lastWatchedId);
+                
+                const cDoc = await getDoc(doc(db, "courses", courseId));
+                document.getElementById('lms-course-title').innerText = cDoc.data().title;
+                
+            } catch (e) {
+                console.error(e);
+            }
+        };
+
+        const playLesson = (lessonId) => {
+            const lesson = lmsLessons.find(l => l.id === lessonId);
+            if (!lesson) return;
+            
+            currentLessonId = lessonId;
+            document.getElementById('lms-lesson-title').innerText = lesson.lessonTitle;
+            document.getElementById('lms-lesson-desc').innerText = lesson.description;
+            
+            // Resources
+            const resContainer = document.getElementById('lms-lesson-resources');
+            resContainer.innerHTML = '';
+            if (lesson.resources) {
+                resContainer.innerHTML = `
+                    <a href="${lesson.resources}" target="_blank" class="flex items-center gap-3 p-3 bg-blue-50 text-blue-700 rounded-xl text-sm font-bold hover:bg-blue-100 transition">
+                        <i class="fas fa-external-link-alt"></i> Download / View Resources
+                    </a>
+                `;
+            } else {
+                resContainer.innerHTML = '<p class="text-slate-400 text-xs italic">No resources for this lesson.</p>';
+            }
+
+            // Extract YT ID
+            let videoId = "";
+            if (lesson.youtubeVideoLink.includes("v=")) {
+                videoId = lesson.youtubeVideoLink.split("v=")[1].split("&")[0];
+            } else if (lesson.youtubeVideoLink.includes("youtu.be/")) {
+                videoId = lesson.youtubeVideoLink.split("youtu.be/")[1];
+            }
+            
+            document.getElementById('lms-video').src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+            
+            // Update active state in playlist
+            document.querySelectorAll('.lesson-item').forEach(el => {
+                el.classList.remove('bg-blue-50', 'border-l-4', 'border-blue-600');
+            });
+            const activeItem = document.getElementById(`lesson-item-${lessonId}`);
+            if (activeItem) activeItem.classList.add('bg-blue-50', 'border-l-4', 'border-blue-600');
+            
+            // Update UI for Mark Complete button
+            updateCompleteBtn(lessonId, lesson.courseId);
+
+            // Save progress (last watched)
+            const progRef = doc(db, "progress", `${currentUser.uid}_${lesson.courseId}`);
+            getDoc(progRef).then(snap => {
+                if (snap.exists()) {
+                    updateDoc(progRef, {
+                        lastLessonId: lessonId,
+                        lastWatchedAt: serverTimestamp()
+                    });
+                } else {
+                    setDoc(progRef, {
+                        userId: currentUser.uid,
+                        courseId: lesson.courseId,
+                        lastLessonId: lessonId,
+                        lastWatchedAt: serverTimestamp(),
+                        completedLessons: []
+                    });
+                }
+            });
+        };
+
+        const updateCompleteBtn = async (lessonId, courseId) => {
+            const btn = document.getElementById('mark-complete-btn');
+            const progSnap = await getDoc(doc(db, "progress", `${currentUser.uid}_${courseId}`));
+            const completed = progSnap.exists() && (progSnap.data().completedLessons || []).includes(lessonId);
+            
+            if (completed) {
+                btn.innerHTML = `<i class="fas fa-check-double mr-2"></i> ${currentLang === 'bn' ? 'সম্পন্ন হয়েছে' : 'Completed'}`;
+                btn.className = "px-6 py-2 bg-slate-200 text-slate-500 rounded-xl font-bold cursor-default";
+                btn.onclick = null;
+            } else {
+                btn.innerHTML = `<i class="fas fa-check-circle mr-2"></i> ${currentLang === 'bn' ? 'সম্পন্ন করুন' : 'Mark as Complete'}`;
+                btn.className = "px-6 py-2 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition flex items-center";
+                btn.onclick = () => markLessonComplete(lessonId, courseId);
+            }
+
+            // Update progress indicator text
+            const total = lmsLessons.length;
+            const done = progSnap.exists() ? (progSnap.data().completedLessons || []).length : 0;
+            document.getElementById('progress-indicator').innerText = `${done}/${total} ${currentLang === 'bn' ? 'পাঠ সম্পন্ন' : 'Lessons'}`;
+        };
+
+        window.markLessonComplete = async (lessonId, courseId) => {
+            const progRef = doc(db, "progress", `${currentUser.uid}_${courseId}`);
+            const progSnap = await getDoc(progRef);
+            let completed = [];
+            if (progSnap.exists()) {
+                completed = progSnap.data().completedLessons || [];
+            }
+            if (!completed.includes(lessonId)) {
+                completed.push(lessonId);
+                if (progSnap.exists()) {
+                    await updateDoc(progRef, { 
+                        completedLessons: completed,
+                        lastLessonId: lessonId,
+                        lastWatchedAt: serverTimestamp() 
+                    });
+                } else {
+                    await setDoc(progRef, {
+                        userId: currentUser.uid,
+                        courseId: courseId,
+                        completedLessons: completed,
+                        lastLessonId: lessonId,
+                        lastWatchedAt: serverTimestamp()
+                    });
+                }
+                toast(currentLang === 'bn' ? 'পাঠ সম্পন্ন হয়েছে!' : 'Lesson marked as complete!', 'success');
+                updateCompleteBtn(lessonId, courseId);
+                
+                // Refresh local lessons state if needed or just re-render
+                renderPlaylist(courseId, completed);
+            }
+        };
+
+        window.showProfileEdit = () => {
+            document.getElementById('edit-user-name').value = userData.name;
+            document.getElementById('profile-modal').classList.remove('hidden');
+            document.getElementById('profile-dropdown').classList.add('hidden');
+        };
+
+        window.hideProfileEdit = () => document.getElementById('profile-modal').classList.add('hidden');
+
+        document.getElementById('profile-edit-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const newName = document.getElementById('edit-user-name').value;
+            try {
+                await updateDoc(doc(db, "users", currentUser.uid), { name: newName });
+                userData.name = newName;
+                document.getElementById('dropdown-user-name').innerText = newName;
+                document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(newName)}&background=2563eb&color=fff`;
+                toast(currentLang === 'bn' ? 'প্রোফাইল আপডেট হয়েছে!' : 'Profile updated!', 'success');
+                hideProfileEdit();
+            } catch (e) {
+                toast("Error updating profile", "error");
+            }
+        };
+
+        const renderPlaylist = (courseId, completedLessons = []) => {
+            const list = document.getElementById('lms-playlist');
+            list.innerHTML = '';
+            
+            const isAdmin = userData && userData.role === 'admin';
+            
+            if (isAdmin) {
+                const addBtn = document.createElement('div');
+                addBtn.className = "p-4 border-b border-dashed border-blue-200 bg-blue-50/50 cursor-pointer hover:bg-blue-50 transition flex items-center justify-center gap-2 text-blue-600 font-bold text-sm";
+                addBtn.onclick = () => showLessonForm(courseId);
+                addBtn.innerHTML = `<i class="fas fa-plus-circle"></i> Add New Lesson`;
+                list.appendChild(addBtn);
+            }
+
+            lmsLessons.forEach((l, idx) => {
+                const isDone = completedLessons.includes(l.id);
+                const item = document.createElement('div');
+                item.id = `lesson-item-${l.id}`;
+                item.className = `lesson-item p-4 cursor-pointer hover:bg-slate-50 transition flex items-start gap-3 ${l.id === currentLessonId ? 'bg-blue-50 border-l-4 border-blue-600' : ''}`;
+                
+                item.innerHTML = `
+                    <div class="h-8 w-8 rounded-full ${isDone ? 'bg-green-100 text-green-600' : 'bg-slate-100'} flex items-center justify-center shrink-0 font-bold text-xs" onclick="playLesson('${l.id}')">
+                        ${isDone ? '<i class="fas fa-check"></i>' : idx + 1}
+                    </div>
+                    <div class="flex-1" onclick="playLesson('${l.id}')">
+                        <h4 class="text-sm font-bold leading-tight mb-1">${l.lessonTitle}</h4>
+                        <div class="flex items-center gap-2 text-[10px] ${isDone ? 'text-green-500' : 'text-slate-400'} font-bold uppercase">
+                            <i class="${isDone ? 'fas fa-check-circle' : 'far fa-play-circle'}"></i> 
+                            ${isDone ? (currentLang === 'bn' ? 'সম্পন্ন' : 'Completed') : (currentLang === 'bn' ? 'ভিডিও পাঠ' : 'Video Lesson')}
+                        </div>
+                    </div>
+                    ${isAdmin ? `
+                        <div class="flex flex-col gap-2">
+                            <button onclick="event.stopPropagation(); showLessonForm('${courseId}'); setTimeout(() => editLesson('${l.id}'), 100);" class="text-slate-400 hover:text-blue-600 transition"><i class="fas fa-edit text-xs"></i></button>
+                            <button onclick="event.stopPropagation(); deleteLessonInLMS('${l.id}', '${courseId}')" class="text-slate-400 hover:text-red-600 transition"><i class="fas fa-trash text-xs"></i></button>
+                        </div>
+                    ` : ''}
+                `;
+                list.appendChild(item);
+            });
+        };
+
+        window.deleteLessonInLMS = async (id, courseId) => {
+            if(confirm("Delete this lesson?")) {
+                await deleteDoc(doc(db, "lessons", id));
+                toast("Lesson deleted");
+                // Refresh LMS state
+                startLearning(courseId);
+            }
+        };
+
+        // DASHBOARD
+        const loadDashboard = async () => {
+            if (!currentUser) return navigateTo('login');
+            
+            const list = document.getElementById('enrolled-courses-list');
+            const empty = document.getElementById('no-enrollments');
+            const statCourses = document.getElementById('dash-stat-courses');
+            const statCompleted = document.getElementById('dash-stat-completed');
+            
+            // Set initial state
+            statCourses.innerText = "...";
+            statCompleted.innerText = "...";
+            empty.classList.add('hidden');
+            list.innerHTML = `
+                <div class="col-span-full py-20 text-center">
+                    <div class="spinner border-blue-600 mx-auto"></div>
+                    <p class="mt-4 text-slate-500">Fetching your courses...</p>
+                </div>
+            `;
+            
+            try {
+                // Fetch enrollment documents
+                const q = query(collection(db, "enrollments"), where("userId", "==", currentUser.uid));
+                const snap = await getDocs(q);
+                
+                if (snap.empty) {
+                    list.innerHTML = '';
+                    empty.classList.remove('hidden');
+                    statCourses.innerText = "0";
+                    statCompleted.innerText = "0";
+                    return;
+                }
+                
+                list.innerHTML = ''; // Clear loader
+                statCourses.innerText = snap.size;
+                let completedCoursesCount = 0;
+                
+                // Track if we found at least one valid course
+                let foundCourses = 0;
+
+                for (const d of snap.docs) {
+                    const enroll = d.data();
+                    const courseId = enroll.courseId;
+                    
+                    if (!courseId) continue;
+
+                    const courseDocRef = doc(db, "courses", courseId);
+                    const cSnap = await getDoc(courseDocRef);
+                    
+                    if (!cSnap.exists()) continue;
+                    
+                    foundCourses++;
+                    const c = cSnap.data();
+                    
+                    // Fetch progress details for this specific course
+                    const progRef = doc(db, "progress", `${currentUser.uid}_${courseId}`);
+                    const progSnap = await getDoc(progRef);
+                    const progData = progSnap.exists() ? progSnap.data() : { completedLessons: [] };
+                    const completedCount = (progData.completedLessons || []).length;
+                    
+                    // Fetch total lessons for this course to calculate percentage
+                    const lessonsQuery = query(collection(db, "lessons"), where("courseId", "==", courseId));
+                    const lessonsSnap = await getDocs(lessonsQuery);
+                    const totalLessons = lessonsSnap.size || 0;
+                    
+                    const percent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+                    if (percent === 100 && totalLessons > 0) completedCoursesCount++;
+
+                    const card = document.createElement('div');
+                    card.className = "bg-white p-6 rounded-3xl border border-slate-100 flex flex-col sm:flex-row gap-6 hover:shadow-xl transition-all duration-300 group";
+                    card.innerHTML = `
+                        <div class="w-full sm:w-48 h-36 shrink-0 overflow-hidden rounded-2xl bg-slate-100 cursor-pointer" onclick="showCourseDetail('${courseId}')">
+                            <img src="${c.posterImage || 'https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?auto=format&fit=crop&w=400&q=80'}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                        </div>
+                        <div class="flex-1 flex flex-col justify-between">
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-800 mb-1 group-hover:text-blue-600 transition cursor-pointer" onclick="showCourseDetail('${courseId}')">${c.title || 'Untitled Course'}</h3>
+                                <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-4">${totalLessons} Lessons total</p>
+                            </div>
+                            
+                            <div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-xs font-bold text-slate-500">${percent}% Completed</span>
+                                    <span class="text-[10px] text-slate-400 font-bold">${completedCount}/${totalLessons}</span>
+                                </div>
+                                <div class="w-full bg-slate-100 rounded-full h-1.5 mb-4 overflow-hidden">
+                                    <div class="bg-blue-600 h-full rounded-full transition-all duration-1000" style="width: ${percent}%"></div>
+                                </div>
+                                <button onclick="startLearning('${courseId}')" class="w-full sm:w-auto px-10 py-3 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-500/20">
+                                    ${percent === 0 ? 'Start Learning' : (percent === 100 ? 'Review Lessons' : 'Continue Learning')}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    list.appendChild(card);
+                }
+
+                // Final sync of stats
+                statCompleted.innerText = completedCoursesCount;
+                if (foundCourses === 0) {
+                    empty.classList.remove('hidden');
+                }
+
+            } catch (e) {
+                console.error("Dashboard critical error:", e);
+                list.innerHTML = `
+                    <div class="col-span-full py-10 text-center">
+                        <i class="fas fa-exclamation-triangle text-red-500 text-3xl mb-4"></i>
+                        <p class="text-red-600 font-bold">Failed to load dashboard data.</p>
+                        <p class="text-slate-400 text-sm mt-2">${e.message}</p>
+                        <button onclick="loadDashboard()" class="mt-6 px-6 py-2 bg-slate-100 rounded-lg text-sm font-bold">Try Again</button>
+                    </div>
+                `;
+            }
+        };
+
+        // REVIEWS
+        let currentRating = 0;
+        window.setRating = (r) => {
+            currentRating = r;
+            const stars = document.getElementById('rating-stars').querySelectorAll('i');
+            stars.forEach((s, idx) => {
+                if (idx < r) {
+                    s.classList.replace('far', 'fas');
+                } else {
+                    s.classList.replace('fas', 'far');
+                }
+            });
+        };
+
+        window.submitReview = async (courseId) => {
+            const comment = document.getElementById('review-comment').value;
+            if (currentRating === 0) return toast("Please select a rating", "error");
+            if (!comment) return toast("Please write a comment", "error");
+
+            try {
+                await addDoc(collection(db, "reviews"), {
+                    userId: currentUser.uid,
+                    userName: userData.name,
+                    courseId: courseId,
+                    rating: currentRating,
+                    comment: comment,
+                    createdAt: serverTimestamp()
+                });
+                
+                // Update course rating (Simple avg logic in real app would use Cloud Functions)
+                await updateDoc(doc(db, "courses", courseId), {
+                    totalReviews: increment(1),
+                    averageRating: currentRating // simplified for MVP
+                });
+
+                toast("Review submitted!", "success");
+                loadReviews(courseId);
+                document.getElementById('review-comment').value = '';
+                setRating(0);
+            } catch (e) {
+                toast("Error submitting review", "error");
+            }
+        };
+
+        const loadReviews = async (courseId) => {
+            const list = document.getElementById('reviews-list');
+            try {
+                const q = query(collection(db, "reviews"), where("courseId", "==", courseId), orderBy("createdAt", "desc"));
+                const snap = await getDocs(q);
+                list.innerHTML = '';
+                if (snap.empty) {
+                    list.innerHTML = '<p class="text-slate-400 italic" data-i18n="noReviews">No reviews yet.</p>';
+                    return;
+                }
+                snap.forEach(d => {
+                    const r = d.data();
+                    const rDiv = document.createElement('div');
+                    rDiv.className = "p-6 bg-white rounded-2xl shadow-sm border border-slate-50";
+                    rDiv.innerHTML = `
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex items-center gap-3">
+                                <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(r.userName)}&background=random" class="h-10 w-10 rounded-full">
+                                <div>
+                                    <h4 class="font-bold text-sm">${r.userName}</h4>
+                                    <div class="text-amber-500 text-[10px]">
+                                        ${'<i class="fas fa-star"></i>'.repeat(r.rating)}
+                                        ${'<i class="far fa-star"></i>'.repeat(5 - r.rating)}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-slate-600 text-sm">${r.comment}</p>
+                    `;
+                    list.appendChild(rDiv);
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        };
+
+        // ADMIN LOGIC
+        window.switchAdminTab = (tab) => {
+            document.querySelectorAll('.admin-tab').forEach(t => t.classList.add('hidden'));
+            document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active', 'bg-blue-600', 'text-white'));
+            
+            document.getElementById(`admin-${tab}`).classList.remove('hidden');
+            const activeBtn = document.querySelector(`.admin-tab-btn[data-tab="${tab}"]`);
+            activeBtn.classList.add('active', 'bg-blue-600', 'text-white');
+        };
+
+        const loadAdmin = async () => {
+            if (!userData || userData.role !== 'admin') {
+                toast("Unauthorized Access", "error");
+                return navigateTo('home');
+            }
+            loadAdminUsers();
+            loadAdminCourses();
+            loadAdminEnrollments();
+        };
+
+        const loadAdminUsers = async () => {
+            const list = document.getElementById('admin-users-list');
+            const snap = await getDocs(collection(db, "users"));
+            list.innerHTML = '';
+            snap.forEach(d => {
+                const u = d.data();
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-100";
+                tr.innerHTML = `
+                    <td class="p-4">
+                        <div class="text-sm font-bold">${u.name}</div>
+                        <div class="text-xs text-slate-400">${u.email}</div>
+                    </td>
+                    <td class="p-4">
+                        <span class="px-2 py-1 ${u.role === 'admin' ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-600'} text-[10px] font-bold rounded-lg uppercase">${u.role}</span>
+                    </td>
+                    <td class="p-4">
+                        <div class="flex gap-2">
+                            <button onclick="showAssignModal('${d.id}', '${u.name}')" class="text-blue-600 hover:bg-blue-50 p-2 rounded-lg" title="Assign Course"><i class="fas fa-graduation-cap"></i></button>
+                            ${u.role !== 'admin' ? `<button onclick="promoteUser('${d.id}')" class="text-rose-600 hover:bg-rose-50 p-2 rounded-lg" title="Make Admin"><i class="fas fa-user-shield"></i></button>` : ''}
+                        </div>
+                    </td>
+                `;
+                list.appendChild(tr);
+            });
+        };
+
+        const loadAdminCourses = async () => {
+            const list = document.getElementById('admin-courses-list');
+            const snap = await getDocs(collection(db, "courses"));
+            list.innerHTML = '';
+            snap.forEach(d => {
+                const c = d.data();
+                const div = document.createElement('div');
+                div.className = "bg-slate-50 p-4 rounded-2xl border border-slate-200";
+                div.innerHTML = `
+                    <img src="${c.posterImage}" class="w-full h-32 object-cover rounded-xl mb-4">
+                    <h4 class="font-bold mb-4">${c.title}</h4>
+                    <div class="flex gap-2">
+                        <button onclick="editCourse('${d.id}')" class="flex-1 py-2 bg-slate-200 rounded-lg text-xs font-bold">Edit</button>
+                        <button onclick="showLessonForm('${d.id}')" class="flex-1 py-2 bg-blue-100 text-blue-600 rounded-lg text-xs font-bold">Lessons</button>
+                        <button onclick="deleteCourse('${d.id}')" class="py-2 px-3 bg-red-100 text-red-600 rounded-lg text-xs"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        };
+
+        const loadAdminEnrollments = async () => {
+            const list = document.getElementById('admin-enrollments-list');
+            const snap = await getDocs(collection(db, "enrollments"));
+            list.innerHTML = '';
+            
+            if (snap.empty) {
+                list.innerHTML = '<tr><td colspan="4" class="p-10 text-center text-slate-400">No enrollments found.</td></tr>';
+                return;
+            }
+
+            for (const d of snap.docs) {
+                const en = d.data();
+                
+                // Fetch basic user and course names for readability
+                let userName = "Loading...";
+                let courseName = "Loading...";
+                
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-100 hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="p-4">
+                        <div class="text-xs font-bold" id="en-user-${d.id}">${en.userId}</div>
+                    </td>
+                    <td class="p-4">
+                        <div class="text-xs font-medium text-blue-600" id="en-course-${d.id}">${en.courseId}</div>
+                    </td>
+                    <td class="p-4 text-xs text-slate-400">Manual</td>
+                    <td class="p-4">
+                        <button onclick="removeEnrollment('${d.id}')" class="text-red-500 hover:underline text-xs font-bold">Revoke</button>
+                    </td>
+                `;
+                list.appendChild(tr);
+                
+                // Async update labels
+                getDoc(doc(db, "users", en.userId)).then(uSnap => {
+                    if (uSnap.exists()) document.getElementById(`en-user-${d.id}`).innerText = uSnap.data().name;
+                });
+                getDoc(doc(db, "courses", en.courseId)).then(cSnap => {
+                    if (cSnap.exists()) document.getElementById(`en-course-${d.id}`).innerText = cSnap.data().title;
+                });
+            }
+        };
+
+        window.showCourseForm = () => {
+            const editId = document.getElementById('course-edit-id').value;
+            if (!editId) {
+                document.getElementById('course-modal-title').innerText = "Add New Course";
+            }
+            document.getElementById('course-modal').classList.remove('hidden');
+        };
+
+        window.hideCourseForm = () => {
+            document.getElementById('course-modal').classList.add('hidden');
+            document.getElementById('course-form').reset();
+            document.getElementById('course-edit-id').value = '';
+            document.getElementById('course-modal-title').innerText = "Add New Course";
+        };
+
+        document.getElementById('course-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('course-edit-id').value;
+            const data = {
+                title: document.getElementById('course-title').value,
+                description: document.getElementById('course-desc').value,
+                price: Number(document.getElementById('course-price').value),
+                posterImage: document.getElementById('course-image').value,
+                isFree: document.getElementById('course-free').checked,
+                updatedAt: serverTimestamp()
+            };
+
+            try {
+                if (id) {
+                    await updateDoc(doc(db, "courses", id), data);
+                    toast("Course updated!");
+                } else {
+                    data.createdAt = serverTimestamp();
+                    data.averageRating = 0;
+                    data.totalReviews = 0;
+                    await addDoc(collection(db, "courses"), data);
+                    toast("Course created!");
+                }
+                hideCourseForm();
+                if (document.getElementById('page-course-detail').classList.contains('active')) {
+                    showCourseDetail(id);
+                } else {
+                    loadAdminCourses();
+                }
+            } catch (e) {
+                toast(e.message, "error");
+            }
+        };
+
+        window.showLessonForm = async (courseId) => {
+            editingLessonId = null;
+            document.getElementById('lesson-form').reset();
+            document.getElementById('lecture-form-title').innerText = "Add New Lecture";
+            const submitBtn = document.querySelector('#lesson-form button[type="submit"]');
+            submitBtn.innerHTML = '<i class="fas fa-plus-circle mr-2"></i> Save Lecture';
+            submitBtn.classList.replace('bg-blue-600', 'bg-green-600');
+            
+            document.getElementById('lesson-course-id').value = courseId;
+            document.getElementById('lesson-modal').classList.remove('hidden');
+            loadAdminLessons(courseId);
+        };
+
+        window.hideLessonForm = () => {
+            document.getElementById('lesson-modal').classList.add('hidden');
+            editingLessonId = null;
+            document.getElementById('lesson-form').reset();
+            document.getElementById('lecture-form-title').innerText = "Add New Lecture";
+            const submitBtn = document.querySelector('#lesson-form button[type="submit"]');
+            submitBtn.innerHTML = '<i class="fas fa-plus-circle mr-2"></i> Save Lecture';
+            submitBtn.classList.replace('bg-blue-600', 'bg-green-600');
+            document.getElementById('cancel-lesson-edit').classList.add('hidden');
+        };
+
+        const loadAdminLessons = async (courseId) => {
+            const list = document.getElementById('lesson-list-admin');
+            // Remove orderBy to ensure all documents appear even if missing 'order' field
+            const q = query(collection(db, "lessons"), where("courseId", "==", courseId));
+            const snap = await getDocs(q);
+            list.innerHTML = '';
+            
+            if (snap.empty) {
+                list.innerHTML = '<div class="p-8 text-center text-slate-400 italic">No lectures added to this course yet.</div>';
+                return;
+            }
+
+            // Sort manually if needed, or just display as they come
+            const lessons = snap.docs.map(d => ({id: d.id, ...d.data()}));
+            lessons.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+            lessons.forEach((l, index) => {
+                const div = document.createElement('div');
+                div.className = "flex items-center gap-4 p-4 border-b hover:bg-slate-50 transition group";
+                div.innerHTML = `
+                    <div class="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-xs font-bold text-slate-500">
+                        ${index + 1}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-bold text-slate-800 truncate">${l.lessonTitle}</div>
+                        <div class="flex items-center gap-3 mt-1">
+                            <div class="text-[10px] text-blue-600 font-medium bg-blue-50 px-2 py-0.5 rounded">YouTube</div>
+                            ${l.resources ? '<div class="text-[10px] text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded">Resources</div>' : ''}
+                        </div>
+                    </div>
+                    <div class="flex gap-1 transition">
+                        <button onclick="editLesson('${l.id}')" class="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition" title="Edit Lecture">
+                            <i class="fas fa-edit text-xs"></i>
+                        </button>
+                        <button onclick="deleteLesson('${l.id}', '${courseId}')" class="p-2 text-red-500 hover:bg-red-100 rounded-lg transition" title="Delete Lecture">
+                            <i class="fas fa-trash text-xs"></i>
+                        </button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        };
+
+        let editingLessonId = null;
+
+        window.editLesson = async (id) => {
+            editingLessonId = id;
+            const docSnap = await getDoc(doc(db, "lessons", id));
+            if (docSnap.exists()) {
+                const l = docSnap.data();
+                document.getElementById('lesson-title').value = l.lessonTitle;
+                document.getElementById('lesson-url').value = l.youtubeVideoLink;
+                document.getElementById('lesson-desc-field').value = l.description || '';
+                document.getElementById('lesson-resources').value = l.resources || '';
+                
+                document.getElementById('lecture-form-title').innerText = "Edit Lecture Details";
+                const submitBtn = document.querySelector('#lesson-form button[type="submit"]');
+                submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i> Update Lecture';
+                document.getElementById('cancel-lesson-edit').classList.remove('hidden');
+                
+                // Scroll form into view
+                document.getElementById('lesson-form').closest('.overflow-y-auto').scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        };
+
+        document.getElementById('cancel-lesson-edit').onclick = () => {
+            editingLessonId = null;
+            document.getElementById('lesson-form').reset();
+            document.getElementById('lecture-form-title').innerText = "Add New Lecture";
+            const submitBtn = document.querySelector('#lesson-form button[type="submit"]');
+            submitBtn.innerHTML = '<i class="fas fa-plus-circle mr-2"></i> Save Lecture';
+            document.getElementById('cancel-lesson-edit').classList.add('hidden');
+        };
+
+        window.deleteLesson = async (id, courseId) => {
+            if(confirm("Delete this lesson?")) {
+                await deleteDoc(doc(db, "lessons", id));
+                toast("Lesson deleted");
+                loadAdminLessons(courseId);
+            }
+        };
+
+        document.getElementById('lesson-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const courseId = document.getElementById('lesson-course-id').value;
+            const title = document.getElementById('lesson-title').value;
+            const url = document.getElementById('lesson-url').value;
+            const desc = document.getElementById('lesson-desc-field').value;
+            const resources = document.getElementById('lesson-resources').value;
+
+            try {
+                if (editingLessonId) {
+                    await updateDoc(doc(db, "lessons", editingLessonId), {
+                        lessonTitle: title,
+                        youtubeVideoLink: url,
+                        description: desc,
+                        resources: resources || "",
+                        updatedAt: serverTimestamp()
+                    });
+                    toast("Lesson updated!");
+                    editingLessonId = null;
+                    document.getElementById('lecture-form-title').innerText = "Add New Lecture";
+                    const submitBtn = document.querySelector('#lesson-form button[type="submit"]');
+                    submitBtn.innerHTML = '<i class="fas fa-plus-circle mr-2"></i> Save Lecture';
+                    document.getElementById('cancel-lesson-edit').classList.add('hidden');
+                } else {
+                    const q = query(collection(db, "lessons"), where("courseId", "==", courseId));
+                    const snap = await getDocs(q);
+                    await addDoc(collection(db, "lessons"), {
+                        courseId,
+                        lessonTitle: title,
+                        youtubeVideoLink: url,
+                        description: desc,
+                        resources: resources || "",
+                        order: snap.size + 1,
+                        createdAt: serverTimestamp()
+                    });
+                    toast("Lesson added!");
+                }
+                document.getElementById('lesson-form').reset();
+                if (document.getElementById('page-lms').classList.contains('active')) {
+                    startLearning(courseId);
+                } else {
+                    loadAdminLessons(courseId);
+                }
+            } catch (e) {
+                toast(e.message, "error");
+            }
+        };
+
+        window.showAssignModal = async (userId, userName) => {
+            document.getElementById('assign-user-name').innerText = userName;
+            document.getElementById('assign-modal').classList.remove('hidden');
+            const grid = document.getElementById('assign-courses-grid');
+            grid.innerHTML = '<div class="spinner border-blue-600 mx-auto"></div>';
+            
+            const snap = await getDocs(collection(db, "courses"));
+            grid.innerHTML = '';
+            snap.forEach(d => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-4 rounded-xl border border-slate-200 hover:bg-blue-50 transition flex justify-between items-center";
+                btn.onclick = () => assignCourse(userId, d.id);
+                btn.innerHTML = `
+                    <span class="font-bold text-sm">${d.data().title}</span>
+                    <i class="fas fa-plus-circle text-blue-600"></i>
+                `;
+                grid.appendChild(btn);
+            });
+        };
+
+        window.hideAssignModal = () => document.getElementById('assign-modal').classList.add('hidden');
+
+        window.assignCourse = async (userId, courseId) => {
+            try {
+                // Check if already enrolled
+                const q = query(collection(db, "enrollments"), where("userId", "==", userId), where("courseId", "==", courseId));
+                const snap = await getDocs(q);
+                if (!snap.empty) {
+                    toast("User is already enrolled in this course", "error");
+                    return;
+                }
+
+                await addDoc(collection(db, "enrollments"), {
+                    userId,
+                    courseId,
+                    status: 'active',
+                    enrolledAt: serverTimestamp()
+                });
+                toast("Course assigned successfully!");
+                hideAssignModal();
+                loadAdminEnrollments();
+            } catch (e) {
+                toast("Error assigning course", "error");
+            }
+        };
+
+        window.promoteUser = async (userId) => {
+            if (confirm("Promote this user to Admin?")) {
+                try {
+                    await updateDoc(doc(db, "users", userId), { role: 'admin' });
+                    toast("User promoted to Admin!");
+                    loadAdminUsers();
+                } catch (e) {
+                    toast("Error promoting user", "error");
+                }
+            }
+        };
+
+        window.removeEnrollment = async (enrollId) => {
+            if (confirm("Remove this enrollment? The user will lose access.")) {
+                try {
+                    await deleteDoc(doc(db, "enrollments", enrollId));
+                    toast("Enrollment removed");
+                    loadAdminEnrollments();
+                } catch (e) {
+                    toast("Error removing enrollment", "error");
+                }
+            }
+        };
+
+        window.editCourse = async (courseId) => {
+            const snap = await getDoc(doc(db, "courses", courseId));
+            if (snap.exists()) {
+                const c = snap.data();
+                document.getElementById('course-edit-id').value = courseId;
+                document.getElementById('course-title').value = c.title;
+                document.getElementById('course-desc').value = c.description;
+                document.getElementById('course-price').value = c.price;
+                document.getElementById('course-image').value = c.posterImage;
+                document.getElementById('course-free').checked = !!c.isFree;
+                
+                document.getElementById('course-modal-title').innerText = "Edit Course";
+                showCourseForm();
+            }
+        };
+
+        window.deleteCourse = async (courseId) => {
+            if (confirm("ARE YOU SURE? This will delete the course and may leave broken links. You should manually delete its lessons too.")) {
+                try {
+                    await deleteDoc(doc(db, "courses", courseId));
+                    toast("Course deleted successfully");
+                    loadAdminCourses();
+                } catch (e) {
+                    toast("Error deleting course", "error");
+                }
+            }
+        };
+
+        // INITIALIZATION
+        onAuthStateChanged(auth, async (user) => {
+            currentUser = user;
+            const authBtns = document.getElementById('auth-buttons');
+            const mobileAuth = document.getElementById('mobile-auth-buttons');
+            const userMenu = document.getElementById('user-menu');
+            const adminLink = document.getElementById('admin-link-container');
+
+            if (user) {
+                authBtns.classList.add('hidden');
+                authBtns.classList.remove('sm:flex');
+                mobileAuth.classList.add('hidden');
+                document.getElementById('mobile-user-buttons').classList.remove('hidden');
+                userMenu.classList.remove('hidden');
+                
+                // Fetch User Data
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists()) {
+                    userData = userDoc.data();
+                    document.getElementById('dropdown-user-name').innerText = userData.name;
+                    document.getElementById('dropdown-user-email').innerText = user.email;
+                    document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}&background=2563eb&color=fff`;
+                    
+                    if (userData.role === 'admin') {
+                        adminLink.classList.remove('hidden');
+                    }
+                }
+            } else {
+                authBtns.classList.remove('hidden');
+                authBtns.classList.add('sm:flex');
+                mobileAuth.classList.remove('hidden');
+                document.getElementById('mobile-user-buttons').classList.add('hidden');
+                userMenu.classList.add('hidden');
+                adminLink.classList.add('hidden');
+                userData = null;
+            }
+            
+            // Initial Data Load
+            const activePage = document.querySelector('[data-page].active');
+            if (activePage) {
+                const pageId = activePage.id.replace('page-', '');
+                if (pageId === 'home') loadHome();
+                if (pageId === 'courses') loadCourses();
+                if (pageId === 'dashboard') loadDashboard();
+                if (pageId === 'admin') loadAdmin();
+            }
+            updateLanguageUI();
+        });
+
+        // UI EVENT LISTENERS
+        document.getElementById('profile-btn').onclick = (e) => {
+            e.stopPropagation();
+            document.getElementById('profile-dropdown').classList.toggle('hidden');
+        };
+
+        document.getElementById('settings-trigger').onclick = (e) => {
+            e.preventDefault();
+            document.getElementById('settings-modal').classList.remove('hidden');
+            document.getElementById('profile-dropdown').classList.add('hidden');
+        };
+
+        document.getElementById('close-settings').onclick = () => {
+            document.getElementById('settings-modal').classList.add('hidden');
+        };
+
+        document.getElementById('lang-select').onchange = (e) => {
+            currentLang = e.target.value;
+            localStorage.setItem('lang', currentLang);
+            updateLanguageUI();
+            toast(currentLang === 'bn' ? 'ভাষা পরিবর্তন করা হয়েছে' : 'Language updated', 'info');
+        };
+
+        document.getElementById('auth-form').onsubmit = handleAuthSubmit;
+        document.getElementById('auth-toggle').onclick = handleAuthToggle;
+        document.getElementById('mobile-menu-btn').onclick = () => {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        };
+
+        // Close dropdowns on outside click
+        window.onclick = (e) => {
+            if (!document.getElementById('profile-btn').contains(e.target)) {
+                document.getElementById('profile-dropdown').classList.add('hidden');
+            }
+            if (e.target === document.getElementById('settings-modal')) {
+                document.getElementById('settings-modal').classList.add('hidden');
+            }
+        };
+
+    </script>
+</body>
+</html>
