@@ -1049,8 +1049,9 @@
         };
 
         // NAVIGATION
-        window.navigateTo = (pageId) => {
+        window.navigateTo = (pageId, push = true, data = null) => {
             // Handle Login/Signup special case
+            let actualMode = pageId;
             if (pageId === 'login' || pageId === 'signup') {
                 setAuthMode(pageId);
                 pageId = 'login'; // Both use page-login section
@@ -1063,13 +1064,38 @@
                 window.scrollTo(0, 0);
                 
                 // Close mobile menu
-                document.getElementById('mobile-menu').classList.add('hidden');
+                const mobileMenu = document.getElementById('mobile-menu');
+                if (mobileMenu) mobileMenu.classList.add('hidden');
+
+                // Browser History Support
+                if (push) {
+                    history.pushState({ pageId: actualMode, data: data }, "", "#" + actualMode);
+                }
 
                 // Page Specific Loads
                 if (pageId === 'home') loadHome();
                 if (pageId === 'courses') loadCourses();
                 if (pageId === 'dashboard') loadDashboard();
                 if (pageId === 'admin') loadAdmin();
+                
+                // Special case for course-detail and lms if coming from popstate
+                if (pageId === 'course-detail' && data && data.courseId) {
+                    window.showCourseDetail(data.courseId, false);
+                }
+                if (pageId === 'lms' && data && data.courseId) {
+                    window.startLearning(data.courseId, false);
+                }
+            }
+        };
+
+        // Handle Browser Back/Forward Buttons
+        window.onpopstate = (e) => {
+            if (e.state && e.state.pageId) {
+                window.navigateTo(e.state.pageId, false, e.state.data);
+            } else {
+                // If no state (initial entry), check URL hash
+                const hash = window.location.hash.substring(1);
+                window.navigateTo(hash || 'home', false);
             }
         };
 
@@ -1316,8 +1342,8 @@
             return div;
         };
 
-        window.showCourseDetail = async (id) => {
-            navigateTo('course-detail');
+        window.showCourseDetail = async (id, push = true) => {
+            navigateTo('course-detail', push, { courseId: id });
             const container = document.getElementById('course-detail-container');
             container.innerHTML = '<div class="py-20 text-center"><div class="spinner border-blue-600 mx-auto"></div><p class="mt-4 text-slate-500">Loading course details...</p></div>';
             
@@ -1517,7 +1543,7 @@
         let currentLessonId = null;
         let lmsLessons = [];
         
-        window.startLearning = async (courseId) => {
+        window.startLearning = async (courseId, push = true) => {
             if (!courseId) return;
 
             // 1. Reset LMS UI
@@ -1580,7 +1606,7 @@
             }
 
             // 3. UI Transition
-            navigateTo('lms');
+            navigateTo('lms', push, { courseId: courseId });
             if (titleEl && courseData) titleEl.innerText = courseData.title || "Course Player";
 
             try {
@@ -2576,14 +2602,25 @@
                     userData = null;
                 }
                 
-                // Initial Data Load
-                const activePage = document.querySelector('[data-page].active');
-                if (activePage) {
-                    const pageId = activePage.id.replace('page-', '');
-                    if (pageId === 'home') loadHome();
-                    if (pageId === 'courses') loadCourses();
-                    if (pageId === 'dashboard') loadDashboard();
-                    if (pageId === 'admin') loadAdmin();
+                // Initial Data Load (Respecting Hash)
+                const hash = window.location.hash.substring(1);
+                if (hash) {
+                    // Simple hash routing
+                    if (hash === 'course-detail' || hash === 'lms') {
+                        // These require IDs, safer to go home or to courses on direct refresh/back
+                        window.navigateTo('home');
+                    } else {
+                        window.navigateTo(hash);
+                    }
+                } else {
+                    const activePage = document.querySelector('[data-page].active');
+                    if (activePage) {
+                        const pageId = activePage.id.replace('page-', '');
+                        if (pageId === 'home') loadHome();
+                        if (pageId === 'courses') loadCourses();
+                        if (pageId === 'dashboard') loadDashboard();
+                        if (pageId === 'admin') loadAdmin();
+                    }
                 }
                 updateLanguageUI();
             });
