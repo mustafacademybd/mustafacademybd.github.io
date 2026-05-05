@@ -509,16 +509,18 @@
                 <!-- Video Player Area -->
                 <div class="flex-1 p-4 lg:p-8">
                     <div class="sticky top-20">
-                        <div class="aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl mb-8">
+                        <div class="aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl mb-8 relative group">
                             <iframe id="lms-video" class="w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            <!-- Transparent overlay to prevent right-clicking/interaction on top bar if possible -->
+                            <div class="absolute inset-0 pointer-events-none select-none"></div>
                         </div>
                         <div class="px-2">
-                            <h2 id="lms-lesson-title" class="text-2xl lg:text-3xl font-bold mb-4">Lesson Title</h2>
+                            <h2 id="lms-lesson-title" class="text-2xl lg:text-3xl font-bold mb-4 text-slate-800">Select a lesson to begin</h2>
                             <div class="flex items-center gap-4 mb-8">
-                                <button id="mark-complete-btn" class="px-6 py-2 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition flex items-center">
+                                <button id="mark-complete-btn" class="hidden px-6 py-2 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition flex items-center">
                                     <i class="fas fa-check-circle mr-2"></i> <span data-i18n="markComplete">Mark as Complete</span>
                                 </button>
-                                <span id="progress-indicator" class="text-sm font-medium px-4 py-2 bg-slate-200 rounded-xl">3/12 Lessons</span>
+                                <span id="progress-indicator" class="hidden text-sm font-medium px-4 py-2 bg-slate-100 text-slate-500 rounded-xl">0/0 Lessons</span>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div class="bg-white p-6 rounded-3xl shadow-sm">
@@ -544,12 +546,15 @@
 
                 <!-- Playlist Area -->
                 <div class="w-full lg:w-[400px] bg-white border-l border-slate-200 h-screen overflow-y-auto">
-                    <div class="p-6 border-b border-slate-100">
-                        <h3 id="lms-course-title" class="font-bold text-lg mb-1">Course Title</h3>
-                        <p class="text-xs text-slate-500 uppercase tracking-widest font-bold" data-i18n="courseContent">Course Content</p>
+                    <div class="p-6 border-b border-slate-100 sticky top-0 bg-white z-10">
+                        <h3 id="lms-course-title" class="font-bold text-lg mb-1 text-slate-800">...</h3>
+                        <p class="text-xs text-slate-400 uppercase tracking-widest font-bold" data-i18n="courseContent">Course Content</p>
                     </div>
                     <div id="lms-playlist" class="divide-y divide-slate-100">
-                        <!-- Lessons list -->
+                        <div class="p-10 text-center">
+                            <div class="spinner border-blue-600 mx-auto mb-4"></div>
+                            <p class="text-xs text-slate-400">Loading playlist...</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -788,9 +793,16 @@
             appId: "1:172189648918:web:98feca432f7f45567f0d37"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        let app, auth, db;
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            console.log("Firebase initialized successfully");
+        } catch (e) {
+            console.error("Firebase initialization failed:", e);
+            toast("Connection Error: Check your internet or config", "error");
+        }
 
         // TRANSLATIONS
         const translations = {
@@ -1114,26 +1126,37 @@
         // COURSE LOGIC
         const loadHome = async () => {
             const list = document.getElementById('trending-courses-list');
+            if (!list) return;
+
             try {
-                const q = query(collection(db, "courses"), orderBy("createdAt", "desc"), limit(3));
+                // Use a simpler query first to check connection
+                const coursesRef = collection(db, "courses");
+                const q = query(coursesRef, limit(3));
                 const snap = await getDocs(q);
+                
                 list.innerHTML = '';
                 if (snap.empty) {
-                    list.innerHTML = '<p class="col-span-full text-center py-10 opacity-50">No courses available yet.</p>';
+                    list.innerHTML = `
+                        <div class="col-span-full text-center py-12">
+                            <p class="text-slate-400 italic">Welcome! We're preparing our first courses. Check back soon!</p>
+                            ${userData && userData.role === 'admin' ? '<button onclick="navigateTo(\'admin\')" class="mt-4 text-blue-600 font-bold underline">Go to Admin Panel to add courses</button>' : ''}
+                        </div>
+                    `;
                     return;
                 }
                 snap.forEach(d => {
-                    const c = d.data();
-                    list.appendChild(createCourseCard(d.id, c));
+                    list.appendChild(createCourseCard(d.id, d.data()));
                 });
             } catch (e) {
-                console.error(e);
+                console.error("Home Load Error:", e);
+                list.innerHTML = `<div class="col-span-full p-6 bg-red-50 text-red-500 rounded-xl text-center text-sm">Connection Error: ${e.message}</div>`;
             }
         };
 
         const loadCourses = async () => {
             const grid = document.getElementById('courses-grid');
-            grid.innerHTML = '<div class="col-span-full py-12 text-center"><div class="spinner border-blue-600 border-t-transparent mx-auto"></div></div>';
+            if (!grid) return;
+            grid.innerHTML = '<div class="col-span-full py-12 text-center"><div class="spinner border-blue-600 mx-auto"></div></div>';
             try {
                 const snap = await getDocs(collection(db, "courses"));
                 grid.innerHTML = '';
@@ -1141,7 +1164,7 @@
                     grid.innerHTML = `
                         <div class="col-span-full py-20 text-center">
                             <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" class="h-24 mx-auto mb-6 opacity-20 grayscale">
-                            <p class="text-slate-400 font-medium">No courses available at the moment. Check back later!</p>
+                            <p class="text-slate-400 font-medium">No courses available yet. Visit our homepage for updates!</p>
                         </div>
                     `;
                     return;
@@ -1150,7 +1173,8 @@
                     grid.appendChild(createCourseCard(d.id, d.data()));
                 });
             } catch (e) {
-                toast("Error loading courses", "error");
+                console.error("Courses Load Error:", e);
+                grid.innerHTML = `<div class="col-span-full p-10 text-center text-red-500 font-bold bg-red-50 rounded-3xl">Failed to connect to database: ${e.message}</div>`;
             }
         };
 
@@ -1243,11 +1267,13 @@
 
                 // Enrollment/Buy Button Logic
                 let actionBtnHtml = '';
-                if (isEnrolled) {
+                // SHOW "Start Learning" if enrolled OR if course is free
+                if (isEnrolled || c.isFree) {
                     actionBtnHtml = `
                         <button onclick="startLearning('${id}')" class="w-full py-5 bg-green-600 text-white font-bold rounded-2xl hover:bg-green-700 transition shadow-lg shadow-green-500/20">
                             <i class="fas fa-play mr-2"></i> <span data-i18n="startLearning">Start Learning</span>
                         </button>
+                        ${c.isFree ? '<p class="text-xs text-center text-green-600 mt-2 font-bold">This course is free!</p>' : ''}
                     `;
                 } else {
                     actionBtnHtml = `
@@ -1341,122 +1367,258 @@
         let lmsLessons = [];
         
         window.startLearning = async (courseId) => {
-            navigateTo('lms');
-            const playlist = document.getElementById('lms-playlist');
-            playlist.innerHTML = '<div class="p-6 text-center spinner border-blue-600 mx-auto"></div>';
-            
+            if (!courseId) return;
+
+            // 1. Reset LMS UI
+            const playlistEl = document.getElementById('lms-playlist');
+            const titleEl = document.getElementById('lms-course-title');
+            const lessonTitleEl = document.getElementById('lms-lesson-title');
+            const lessonDescEl = document.getElementById('lms-lesson-desc');
+            const videoEl = document.getElementById('lms-video');
+            const completeBtn = document.getElementById('mark-complete-btn');
+            const progressEl = document.getElementById('progress-indicator');
+
+            if (titleEl) titleEl.innerText = "Checking access...";
+            if (playlistEl) playlistEl.innerHTML = '<div class="p-10 text-center"><div class="spinner border-blue-600 mx-auto"></div></div>';
+            if (lessonTitleEl) lessonTitleEl.innerText = "Please wait...";
+            if (videoEl) videoEl.src = "";
+            if (completeBtn) completeBtn.classList.add('hidden');
+            if (progressEl) progressEl.classList.add('hidden');
+
+            // 2. Comprehensive Access Check
+            let accessType = null; // 'admin', 'free', 'enrolled'
+            let courseData = null;
+
             try {
-                const q = query(collection(db, "lessons"), where("courseId", "==", courseId));
-                const snap = await getDocs(q);
-                lmsLessons = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                lmsLessons.sort((a, b) => (a.order || 0) - (b.order || 0));
+                // Fetch course data first
+                const cSnap = await getDoc(doc(db, "courses", courseId));
+                if (!cSnap.exists()) {
+                    toast("Course not found", "error");
+                    navigateTo('courses');
+                    return;
+                }
+                courseData = cSnap.data();
+
+                if (userData && userData.role === 'admin') {
+                    accessType = 'admin';
+                } else if (courseData.isFree) {
+                    accessType = 'free';
+                } else if (currentUser) {
+                    // Check Enrollment
+                    const enrollQuery = query(collection(db, "enrollments"), where("userId", "==", currentUser.uid), where("courseId", "==", courseId));
+                    const enrollSnap = await getDocs(enrollQuery).catch(() => null);
+                    
+                    if (enrollSnap && !enrollSnap.empty) {
+                        accessType = 'enrolled';
+                    } else {
+                        // Fallback check (without composite index)
+                        const allUserEnrolls = await getDocs(query(collection(db, "enrollments"), where("userId", "==", currentUser.uid)));
+                        if (allUserEnrolls.docs.some(d => d.data().courseId === courseId)) {
+                            accessType = 'enrolled';
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Access verification failed:", err);
+            }
+
+            if (!accessType) {
+                toast(currentLang === 'bn' ? 'এই কোর্সটি দেখতে আপনাকে প্রথমে এনরোল করতে হবে।' : 'You need access to view this course.', 'error');
+                showCourseDetail(courseId);
+                return;
+            }
+
+            // 3. UI Transition
+            navigateTo('lms');
+            if (titleEl && courseData) titleEl.innerText = courseData.title || "Course Player";
+
+            try {
+                // 4. Fetch Lessons (Resilient)
+                const lessonsQuery = query(collection(db, "lessons"), where("courseId", "==", courseId));
+                const snap = await getDocs(lessonsQuery).catch(err => {
+                    console.error("Lessons query failed:", err);
+                    return { empty: true, docs: [] };
+                });
+                
+                lmsLessons = (snap.docs || []).map(d => ({id: d.id, ...d.data()}));
+                lmsLessons.sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
                 
                 if (lmsLessons.length === 0) {
-                    playlist.innerHTML = '<p class="p-6 opacity-50">No lessons added yet.</p>';
+                    if (playlistEl) playlistEl.innerHTML = '<div class="p-8 text-center text-slate-400 italic">No lessons have been added to this course yet.</div>';
+                    if (lessonTitleEl) lessonTitleEl.innerText = (userData && userData.role === 'admin') ? "Start adding lessons!" : "Coming Soon";
                     return;
                 }
 
-                // Load progress
-                const progSnap = await getDoc(doc(db, "progress", `${currentUser.uid}_${courseId}`));
+                // 5. Progress Loading (Resilient)
                 let lastWatchedId = lmsLessons[0].id;
                 let completedLessons = [];
-                if (progSnap.exists()) {
-                    const data = progSnap.data();
-                    lastWatchedId = data.lastLessonId || lastWatchedId;
-                    completedLessons = data.completedLessons || [];
+                
+                if (currentUser) {
+                    try {
+                        const progRef = doc(db, "progress", `${currentUser.uid}_${courseId}`);
+                        const progSnap = await getDoc(progRef);
+                        if (progSnap.exists()) {
+                            const pData = progSnap.data();
+                            lastWatchedId = pData.lastLessonId || lastWatchedId;
+                            completedLessons = pData.completedLessons || [];
+                        }
+                    } catch (pErr) { console.warn("Progress load failed", pErr); }
                 }
 
+                // 6. Final Render & Play
                 renderPlaylist(courseId, completedLessons);
+                
+                // Ensure the lastWatchedId actually exists in current lessons
+                if (!lmsLessons.some(l => l.id === lastWatchedId)) {
+                    lastWatchedId = lmsLessons[0].id;
+                }
+                
                 playLesson(lastWatchedId);
                 
-                const cDoc = await getDoc(doc(db, "courses", courseId));
-                document.getElementById('lms-course-title').innerText = cDoc.data().title;
-                
             } catch (e) {
-                console.error(e);
+                console.error("LMS Critical Error:", e);
+                toast("Could not load course lectures", "error");
+                if (playlistEl) playlistEl.innerHTML = '<div class="p-10 text-center text-red-500">Error loading lectures. Please try again.</div>';
             }
         };
 
         const playLesson = (lessonId) => {
             const lesson = lmsLessons.find(l => l.id === lessonId);
-            if (!lesson) return;
+            if (!lesson) {
+                console.error("Lesson not found:", lessonId);
+                return;
+            }
             
             currentLessonId = lessonId;
-            document.getElementById('lms-lesson-title').innerText = lesson.lessonTitle;
-            document.getElementById('lms-lesson-desc').innerText = lesson.description;
+            const titleEl = document.getElementById('lms-lesson-title');
+            const descEl = document.getElementById('lms-lesson-desc');
+            const videoEl = document.getElementById('lms-video');
+
+            if (titleEl) titleEl.innerText = lesson.lessonTitle;
+            if (descEl) descEl.innerText = lesson.description || "No description provided.";
             
             // Resources
             const resContainer = document.getElementById('lms-lesson-resources');
-            resContainer.innerHTML = '';
-            if (lesson.resources) {
-                resContainer.innerHTML = `
-                    <a href="${lesson.resources}" target="_blank" class="flex items-center gap-3 p-3 bg-blue-50 text-blue-700 rounded-xl text-sm font-bold hover:bg-blue-100 transition">
-                        <i class="fas fa-external-link-alt"></i> Download / View Resources
-                    </a>
-                `;
-            } else {
-                resContainer.innerHTML = '<p class="text-slate-400 text-xs italic">No resources for this lesson.</p>';
+            if (resContainer) {
+                resContainer.innerHTML = '';
+                if (lesson.resources) {
+                    resContainer.innerHTML = `
+                        <a href="${lesson.resources}" target="_blank" class="flex items-center gap-3 p-3 bg-blue-50 text-blue-700 rounded-xl text-sm font-bold hover:bg-blue-100 transition shadow-sm">
+                            <i class="fas fa-external-link-alt"></i> Download / View Resources
+                        </a>
+                    `;
+                } else {
+                    resContainer.innerHTML = '<p class="text-slate-400 text-xs italic">No resources for this lesson.</p>';
+                }
             }
 
-            // Extract YT ID
+            // Robust YouTube ID Extraction
             let videoId = "";
-            if (lesson.youtubeVideoLink.includes("v=")) {
-                videoId = lesson.youtubeVideoLink.split("v=")[1].split("&")[0];
-            } else if (lesson.youtubeVideoLink.includes("youtu.be/")) {
-                videoId = lesson.youtubeVideoLink.split("youtu.be/")[1];
-            }
+            try {
+                const urlStr = (lesson.youtubeVideoLink || "").trim();
+                if (urlStr.length === 11) {
+                    videoId = urlStr;
+                } else {
+                    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                    const match = urlStr.match(regExp);
+                    if (match && match[2].length == 11) {
+                        videoId = match[2];
+                    } else if (urlStr.includes('/shorts/')) {
+                        videoId = urlStr.split('/shorts/')[1].split('?')[0];
+                    }
+                }
+            } catch (e) { console.error("URL parsing error", e); }
             
-            document.getElementById('lms-video').src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+            if (videoEl && videoId) {
+                videoEl.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3`;
+            } else if (videoEl) {
+                videoEl.src = "";
+                if (titleEl) titleEl.innerText = "Error: Invalid Video Link";
+                toast("Could not load video player", "error");
+            }
             
             // Update active state in playlist
             document.querySelectorAll('.lesson-item').forEach(el => {
                 el.classList.remove('bg-blue-50', 'border-l-4', 'border-blue-600');
+                const t = el.querySelector('h4');
+                if (t) t.classList.remove('text-blue-700');
             });
             const activeItem = document.getElementById(`lesson-item-${lessonId}`);
-            if (activeItem) activeItem.classList.add('bg-blue-50', 'border-l-4', 'border-blue-600');
+            if (activeItem) {
+                activeItem.classList.add('bg-blue-50', 'border-l-4', 'border-blue-600');
+                const t = activeItem.querySelector('h4');
+                if (t) t.classList.add('text-blue-700');
+            }
             
             // Update UI for Mark Complete button
             updateCompleteBtn(lessonId, lesson.courseId);
 
-            // Save progress (last watched)
-            const progRef = doc(db, "progress", `${currentUser.uid}_${lesson.courseId}`);
-            getDoc(progRef).then(snap => {
-                if (snap.exists()) {
-                    updateDoc(progRef, {
-                        lastLessonId: lessonId,
-                        lastWatchedAt: serverTimestamp()
-                    });
-                } else {
-                    setDoc(progRef, {
-                        userId: currentUser.uid,
-                        courseId: lesson.courseId,
-                        lastLessonId: lessonId,
-                        lastWatchedAt: serverTimestamp(),
-                        completedLessons: []
-                    });
-                }
-            });
+            // Save progress (last watched) - Only if logged in
+            if (currentUser) {
+                const progRef = doc(db, "progress", `${currentUser.uid}_${lesson.courseId}`);
+                getDoc(progRef).then(snap => {
+                    if (snap.exists()) {
+                        updateDoc(progRef, {
+                            lastLessonId: lessonId,
+                            lastWatchedAt: serverTimestamp()
+                        }).catch(e => console.error("Progress update failed", e));
+                    } else {
+                        setDoc(progRef, {
+                            userId: currentUser.uid,
+                            courseId: lesson.courseId,
+                            lastLessonId: lessonId,
+                            lastWatchedAt: serverTimestamp(),
+                            completedLessons: []
+                        }).catch(e => console.error("Progress creation failed", e));
+                    }
+                });
+            }
         };
 
         const updateCompleteBtn = async (lessonId, courseId) => {
             const btn = document.getElementById('mark-complete-btn');
-            const progSnap = await getDoc(doc(db, "progress", `${currentUser.uid}_${courseId}`));
-            const completed = progSnap.exists() && (progSnap.data().completedLessons || []).includes(lessonId);
+            const indicator = document.getElementById('progress-indicator');
+            
+            if (!btn || !indicator) return;
+
+            // If not logged in, we can't track completion
+            if (!currentUser) {
+                btn.classList.add('hidden');
+                indicator.classList.add('hidden');
+                return;
+            }
+
+            btn.classList.remove('hidden');
+            indicator.classList.remove('hidden');
+
+            // Find current completion status
+            let completed = false;
+            let done = 0;
+            
+            try {
+                const progSnap = await getDoc(doc(db, "progress", `${currentUser.uid}_${courseId}`));
+                if (progSnap.exists()) {
+                    const data = progSnap.data();
+                    const completedList = data.completedLessons || [];
+                    completed = completedList.includes(lessonId);
+                    done = completedList.length;
+                }
+            } catch (err) {
+                console.error("Progress fetch in button failed:", err);
+            }
             
             if (completed) {
                 btn.innerHTML = `<i class="fas fa-check-double mr-2"></i> ${currentLang === 'bn' ? 'সম্পন্ন হয়েছে' : 'Completed'}`;
-                btn.className = "px-6 py-2 bg-slate-200 text-slate-500 rounded-xl font-bold cursor-default";
+                btn.className = "px-6 py-2 bg-slate-100 text-slate-400 rounded-xl font-bold cursor-default flex items-center shadow-none";
                 btn.onclick = null;
             } else {
                 btn.innerHTML = `<i class="fas fa-check-circle mr-2"></i> ${currentLang === 'bn' ? 'সম্পন্ন করুন' : 'Mark as Complete'}`;
-                btn.className = "px-6 py-2 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition flex items-center";
+                btn.className = "px-6 py-2 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition flex items-center shadow-md";
                 btn.onclick = () => markLessonComplete(lessonId, courseId);
             }
 
-            // Update progress indicator text
-            const total = lmsLessons.length;
-            const done = progSnap.exists() ? (progSnap.data().completedLessons || []).length : 0;
-            document.getElementById('progress-indicator').innerText = `${done}/${total} ${currentLang === 'bn' ? 'পাঠ সম্পন্ন' : 'Lessons'}`;
+            const total = lmsLessons ? lmsLessons.length : 0;
+            indicator.innerText = `${done}/${total} ${currentLang === 'bn' ? 'পাঠ সম্পন্ন' : 'Lessons'}`;
         };
 
         window.markLessonComplete = async (lessonId, courseId) => {
@@ -1516,6 +1678,7 @@
 
         const renderPlaylist = (courseId, completedLessons = []) => {
             const list = document.getElementById('lms-playlist');
+            if (!list) return;
             list.innerHTML = '';
             
             const isAdmin = userData && userData.role === 'admin';
@@ -1528,18 +1691,24 @@
                 list.appendChild(addBtn);
             }
 
+            if (!lmsLessons || lmsLessons.length === 0) {
+                list.innerHTML += '<div class="p-8 text-center text-slate-400 italic text-sm">No lectures found.</div>';
+                return;
+            }
+
             lmsLessons.forEach((l, idx) => {
                 const isDone = completedLessons.includes(l.id);
+                const isActive = l.id === currentLessonId;
                 const item = document.createElement('div');
                 item.id = `lesson-item-${l.id}`;
-                item.className = `lesson-item p-4 cursor-pointer hover:bg-slate-50 transition flex items-start gap-3 ${l.id === currentLessonId ? 'bg-blue-50 border-l-4 border-blue-600' : ''}`;
+                item.className = `lesson-item p-4 cursor-pointer hover:bg-slate-50 transition flex items-start gap-3 ${isActive ? 'bg-blue-50 border-l-4 border-blue-600' : ''}`;
                 
                 item.innerHTML = `
                     <div class="h-8 w-8 rounded-full ${isDone ? 'bg-green-100 text-green-600' : 'bg-slate-100'} flex items-center justify-center shrink-0 font-bold text-xs" onclick="playLesson('${l.id}')">
                         ${isDone ? '<i class="fas fa-check"></i>' : idx + 1}
                     </div>
-                    <div class="flex-1" onclick="playLesson('${l.id}')">
-                        <h4 class="text-sm font-bold leading-tight mb-1">${l.lessonTitle}</h4>
+                    <div class="flex-1 min-w-0" onclick="playLesson('${l.id}')">
+                        <h4 class="text-sm font-bold leading-tight mb-1 truncate ${isActive ? 'text-blue-700' : 'text-slate-800'}">${l.lessonTitle}</h4>
                         <div class="flex items-center gap-2 text-[10px] ${isDone ? 'text-green-500' : 'text-slate-400'} font-bold uppercase">
                             <i class="${isDone ? 'fas fa-check-circle' : 'far fa-play-circle'}"></i> 
                             ${isDone ? (currentLang === 'bn' ? 'সম্পন্ন' : 'Completed') : (currentLang === 'bn' ? 'ভিডিও পাঠ' : 'Video Lesson')}
@@ -1547,8 +1716,8 @@
                     </div>
                     ${isAdmin ? `
                         <div class="flex flex-col gap-2">
-                            <button onclick="event.stopPropagation(); showLessonForm('${courseId}'); setTimeout(() => editLesson('${l.id}'), 100);" class="text-slate-400 hover:text-blue-600 transition"><i class="fas fa-edit text-xs"></i></button>
-                            <button onclick="event.stopPropagation(); deleteLessonInLMS('${l.id}', '${courseId}')" class="text-slate-400 hover:text-red-600 transition"><i class="fas fa-trash text-xs"></i></button>
+                            <button onclick="event.stopPropagation(); showLessonForm('${courseId}'); setTimeout(() => editLesson('${l.id}'), 100);" class="text-slate-300 hover:text-blue-600 transition" title="Edit"><i class="fas fa-edit text-[10px]"></i></button>
+                            <button onclick="event.stopPropagation(); deleteLessonInLMS('${l.id}', '${courseId}')" class="text-slate-300 hover:text-red-600 transition" title="Delete"><i class="fas fa-trash text-[10px]"></i></button>
                         </div>
                     ` : ''}
                 `;
@@ -1587,10 +1756,19 @@
             
             try {
                 // Fetch enrollment documents
+                // We wrap this in a more permissive check to avoid initial permission issues if records don't exist
                 const q = query(collection(db, "enrollments"), where("userId", "==", currentUser.uid));
                 const snap = await getDocs(q);
                 
-                if (snap.empty) {
+                // Also fetch FREE courses to show on dashboard automatically
+                const freeCoursesQuery = query(collection(db, "courses"), where("isFree", "==", true));
+                const freeSnap = await getDocs(freeCoursesQuery);
+                
+                const allCourseIds = new Set();
+                snap.forEach(d => allCourseIds.add(d.data().courseId));
+                freeSnap.forEach(d => allCourseIds.add(d.id));
+
+                if (allCourseIds.size === 0) {
                     list.innerHTML = '';
                     empty.classList.remove('hidden');
                     statCourses.innerText = "0";
@@ -1599,16 +1777,11 @@
                 }
                 
                 list.innerHTML = ''; // Clear loader
-                statCourses.innerText = snap.size;
+                statCourses.innerText = allCourseIds.size;
                 let completedCoursesCount = 0;
-                
-                // Track if we found at least one valid course
                 let foundCourses = 0;
 
-                for (const d of snap.docs) {
-                    const enroll = d.data();
-                    const courseId = enroll.courseId;
-                    
+                for (const courseId of allCourseIds) {
                     if (!courseId) continue;
 
                     const courseDocRef = doc(db, "courses", courseId);
@@ -1619,16 +1792,22 @@
                     foundCourses++;
                     const c = cSnap.data();
                     
-                    // Fetch progress details for this specific course
-                    const progRef = doc(db, "progress", `${currentUser.uid}_${courseId}`);
-                    const progSnap = await getDoc(progRef);
-                    const progData = progSnap.exists() ? progSnap.data() : { completedLessons: [] };
-                    const completedCount = (progData.completedLessons || []).length;
+                    // Fetch progress
+                    let completedCount = 0;
+                    try {
+                        const progRef = doc(db, "progress", `${currentUser.uid}_${courseId}`);
+                        const progSnap = await getDoc(progRef);
+                        const progData = progSnap.exists() ? progSnap.data() : { completedLessons: [] };
+                        completedCount = (progData.completedLessons || []).length;
+                    } catch (e) { console.warn("Progress fetch failed for", courseId); }
                     
-                    // Fetch total lessons for this course to calculate percentage
-                    const lessonsQuery = query(collection(db, "lessons"), where("courseId", "==", courseId));
-                    const lessonsSnap = await getDocs(lessonsQuery);
-                    const totalLessons = lessonsSnap.size || 0;
+                    // Fetch total lessons
+                    let totalLessons = 0;
+                    try {
+                        const lessonsQuery = query(collection(db, "lessons"), where("courseId", "==", courseId));
+                        const lessonsSnap = await getDocs(lessonsQuery);
+                        totalLessons = lessonsSnap.size || 0;
+                    } catch (e) { console.warn("Lessons fetch failed for", courseId); }
                     
                     const percent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
                     if (percent === 100 && totalLessons > 0) completedCoursesCount++;
@@ -1641,7 +1820,10 @@
                         </div>
                         <div class="flex-1 flex flex-col justify-between">
                             <div>
-                                <h3 class="text-xl font-bold text-slate-800 mb-1 group-hover:text-blue-600 transition cursor-pointer" onclick="showCourseDetail('${courseId}')">${c.title || 'Untitled Course'}</h3>
+                                <div class="flex justify-between items-start">
+                                    <h3 class="text-xl font-bold text-slate-800 mb-1 group-hover:text-blue-600 transition cursor-pointer" onclick="showCourseDetail('${courseId}')">${c.title || 'Untitled Course'}</h3>
+                                    ${c.isFree ? '<span class="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-lg uppercase">Free</span>' : ''}
+                                </div>
                                 <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-4">${totalLessons} Lessons total</p>
                             </div>
                             
@@ -1662,19 +1844,14 @@
                     list.appendChild(card);
                 }
 
-                // Final sync of stats
                 statCompleted.innerText = completedCoursesCount;
-                if (foundCourses === 0) {
-                    empty.classList.remove('hidden');
-                }
-
             } catch (e) {
                 console.error("Dashboard critical error:", e);
                 list.innerHTML = `
                     <div class="col-span-full py-10 text-center">
                         <i class="fas fa-exclamation-triangle text-red-500 text-3xl mb-4"></i>
-                        <p class="text-red-600 font-bold">Failed to load dashboard data.</p>
-                        <p class="text-slate-400 text-sm mt-2">${e.message}</p>
+                        <p class="text-red-600 font-bold">Access Denied or Database Error.</p>
+                        <p class="text-slate-500 text-sm mt-2 px-10">Make sure your Firestore Security Rules are updated in the Firebase Console.</p>
                         <button onclick="loadDashboard()" class="mt-6 px-6 py-2 bg-slate-100 rounded-lg text-sm font-bold">Try Again</button>
                     </div>
                 `;
@@ -2174,53 +2351,63 @@
         };
 
         // INITIALIZATION
-        onAuthStateChanged(auth, async (user) => {
-            currentUser = user;
-            const authBtns = document.getElementById('auth-buttons');
-            const mobileAuth = document.getElementById('mobile-auth-buttons');
-            const userMenu = document.getElementById('user-menu');
-            const adminLink = document.getElementById('admin-link-container');
-
-            if (user) {
-                authBtns.classList.add('hidden');
-                authBtns.classList.remove('sm:flex');
-                mobileAuth.classList.add('hidden');
-                document.getElementById('mobile-user-buttons').classList.remove('hidden');
-                userMenu.classList.remove('hidden');
-                
-                // Fetch User Data
-                const userDoc = await getDoc(doc(db, "users", user.uid));
-                if (userDoc.exists()) {
-                    userData = userDoc.data();
-                    document.getElementById('dropdown-user-name').innerText = userData.name;
-                    document.getElementById('dropdown-user-email').innerText = user.email;
-                    document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}&background=2563eb&color=fff`;
-                    
-                    if (userData.role === 'admin') {
-                        adminLink.classList.remove('hidden');
-                    }
-                }
-            } else {
-                authBtns.classList.remove('hidden');
-                authBtns.classList.add('sm:flex');
-                mobileAuth.classList.remove('hidden');
-                document.getElementById('mobile-user-buttons').classList.add('hidden');
-                userMenu.classList.add('hidden');
-                adminLink.classList.add('hidden');
-                userData = null;
-            }
+        // Use a timeout to ensure Firebase is ready before running any data calls
+        setTimeout(() => {
+            if (!auth) return;
             
-            // Initial Data Load
-            const activePage = document.querySelector('[data-page].active');
-            if (activePage) {
-                const pageId = activePage.id.replace('page-', '');
-                if (pageId === 'home') loadHome();
-                if (pageId === 'courses') loadCourses();
-                if (pageId === 'dashboard') loadDashboard();
-                if (pageId === 'admin') loadAdmin();
-            }
-            updateLanguageUI();
-        });
+            onAuthStateChanged(auth, async (user) => {
+                currentUser = user;
+                const authBtns = document.getElementById('auth-buttons');
+                const mobileAuth = document.getElementById('mobile-auth-buttons');
+                const userMenu = document.getElementById('user-menu');
+                const adminLink = document.getElementById('admin-link-container');
+
+                if (user) {
+                    if(authBtns) { authBtns.classList.add('hidden'); authBtns.classList.remove('sm:flex'); }
+                    if(mobileAuth) mobileAuth.classList.add('hidden');
+                    const userMob = document.getElementById('mobile-user-buttons');
+                    if(userMob) userMob.classList.remove('hidden');
+                    if(userMenu) userMenu.classList.remove('hidden');
+                    
+                    try {
+                        const userDoc = await getDoc(doc(db, "users", user.uid));
+                        if (userDoc.exists()) {
+                            userData = userDoc.data();
+                            const dashName = document.getElementById('dropdown-user-name');
+                            const dashEmail = document.getElementById('dropdown-user-email');
+                            const dashAvatar = document.getElementById('user-avatar');
+                            
+                            if(dashName) dashName.innerText = userData.name;
+                            if(dashEmail) dashEmail.innerText = user.email;
+                            if(dashAvatar) dashAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name)}&background=2563eb&color=fff`;
+                            
+                            if (userData.role === 'admin' && adminLink) {
+                                adminLink.classList.remove('hidden');
+                            }
+                        }
+                    } catch (e) { console.error("User data fetch failed", e); }
+                } else {
+                    if(authBtns) { authBtns.classList.remove('hidden'); authBtns.classList.add('sm:flex'); }
+                    if(mobileAuth) mobileAuth.classList.remove('hidden');
+                    const userMob = document.getElementById('mobile-user-buttons');
+                    if(userMob) userMob.classList.add('hidden');
+                    if(userMenu) userMenu.classList.add('hidden');
+                    if(adminLink) adminLink.classList.add('hidden');
+                    userData = null;
+                }
+                
+                // Initial Data Load
+                const activePage = document.querySelector('[data-page].active');
+                if (activePage) {
+                    const pageId = activePage.id.replace('page-', '');
+                    if (pageId === 'home') loadHome();
+                    if (pageId === 'courses') loadCourses();
+                    if (pageId === 'dashboard') loadDashboard();
+                    if (pageId === 'admin') loadAdmin();
+                }
+                updateLanguageUI();
+            });
+        }, 500);
 
         // UI EVENT LISTENERS
         document.getElementById('profile-btn').onclick = (e) => {
