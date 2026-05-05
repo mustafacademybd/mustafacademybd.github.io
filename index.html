@@ -1267,86 +1267,131 @@
 
                 // Enrollment/Buy Button Logic
                 let actionBtnHtml = '';
-                // SHOW "Start Learning" if enrolled OR if course is free
-                if (isEnrolled || c.isFree) {
+                // Robust isFree check
+                const isActuallyFree = c.isFree === true || c.isFree === 'true';
+                
+                if (isActuallyFree || isEnrolled) {
                     actionBtnHtml = `
                         <button onclick="startLearning('${id}')" class="w-full py-5 bg-green-600 text-white font-bold rounded-2xl hover:bg-green-700 transition shadow-lg shadow-green-500/20">
                             <i class="fas fa-play mr-2"></i> <span data-i18n="startLearning">Start Learning</span>
                         </button>
-                        ${c.isFree ? '<p class="text-xs text-center text-green-600 mt-2 font-bold">This course is free!</p>' : ''}
+                        ${isActuallyFree ? `<p class="text-xs text-center text-green-600 mt-3 font-bold uppercase tracking-wider">${currentLang === 'bn' ? 'এটি একটি ফ্রি কোর্স!' : 'This course is free!'}</p>` : ''}
                     `;
                 } else {
                     actionBtnHtml = `
-                        <a href="https://wa.me/8801788481222?text=I%20want%20to%20buy%20${encodeURIComponent(c.title || 'Course')}" target="_blank" class="block w-full text-center py-5 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition shadow-lg shadow-blue-500/20 mb-4">
+                        <div class="mb-4 p-4 bg-blue-50 border border-blue-100 rounded-2xl">
+                            <p class="text-xs text-blue-600 font-medium leading-relaxed">${currentLang === 'bn' ? 'এই কোর্সটি অ্যাক্সেস করতে নিচের হোয়াটসঅ্যাপ বাটনে ক্লিক করে পেমেন্ট সম্পন্ন করুন।' : 'To access this course, please click the WhatsApp button below to complete your payment.'}</p>
+                        </div>
+                        <a href="https://wa.me/8801788481222?text=I%20want%20to%20buy%20${encodeURIComponent(c.title || 'Course')}" target="_blank" class="block w-full text-center py-5 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition shadow-lg shadow-blue-500/20 mb-3">
                             <i class="fab fa-whatsapp mr-2"></i> <span data-i18n="buyViaWA">Buy via WhatsApp</span>
                         </a>
-                        <p class="text-xs text-center text-slate-400">Manual enrollment after payment confirmation</p>
+                        <p class="text-[10px] text-center text-slate-400 uppercase font-bold tracking-tighter">Manual enrollment within 24 hours</p>
                     `;
                 }
 
                 container.innerHTML = `
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                        <div class="lg:col-span-2">
-                            <div class="relative aspect-video rounded-[2.5rem] overflow-hidden shadow-2xl mb-12 bg-slate-200">
+                    <div class="flex flex-col lg:flex-row gap-12">
+                        <!-- Left Column -->
+                        <div class="flex-1 min-w-0">
+                            <!-- Hero Section -->
+                            <div class="relative aspect-video rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-xl mb-10 bg-slate-100 border border-slate-100">
                                 <img src="${c.posterImage || 'https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?auto=format&fit=crop&w=800&q=80'}" class="w-full h-full object-cover" alt="${c.title || 'Course'}">
-                                <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex items-end p-6 md:p-10">
-                                    <div>
-                                        <h1 class="text-3xl md:text-4xl font-bold text-white mb-4">${c.title || 'Untitled Course'}</h1>
-                                        <div class="flex flex-wrap items-center gap-4 md:gap-6 text-white/80 text-sm">
-                                            <span class="flex items-center gap-2"><i class="fas fa-video text-blue-400"></i> ${lessonCount} Lessons</span>
-                                            <span class="flex items-center gap-2"><i class="fas fa-certificate text-blue-400"></i> Lifetime Access</span>
-                                            <span class="flex items-center gap-2"><i class="fas fa-star text-amber-400"></i> ${c.averageRating ? Number(c.averageRating).toFixed(1) : 'New'}</span>
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-6 md:p-10">
+                                    <div class="w-full flex flex-col md:flex-row md:items-end justify-between gap-6">
+                                        <div class="flex-1">
+                                            <h1 class="text-2xl md:text-4xl font-extrabold text-white mb-4 drop-shadow-sm leading-tight">${c.title || 'Untitled Course'}</h1>
+                                            <div class="flex flex-wrap items-center gap-4 text-white/90 text-xs md:text-sm font-medium">
+                                                <span class="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg backdrop-blur-md border border-white/10"><i class="fas fa-play-circle text-blue-400"></i> ${lessonCount} Lessons</span>
+                                                <span class="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg backdrop-blur-md border border-white/10"><i class="fas fa-certificate text-green-400"></i> Lifetime</span>
+                                                <span class="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg backdrop-blur-md border border-white/10"><i class="fas fa-star text-amber-400"></i> ${c.averageRating ? Number(c.averageRating).toFixed(1) : 'New'}</span>
+                                            </div>
                                         </div>
+                                        ${userData && userData.role === 'admin' ? `
+                                            <div class="flex gap-2 shrink-0">
+                                                <button onclick="showLessonForm('${id}')" class="w-12 h-12 flex items-center justify-center bg-white/20 hover:bg-white/40 text-white rounded-2xl backdrop-blur-md border border-white/20 transition-all" title="Manage Lessons">
+                                                    <i class="fas fa-list-ol"></i>
+                                                </button>
+                                                <button onclick="editCourse('${id}')" class="w-12 h-12 flex items-center justify-center bg-white/20 hover:bg-white/40 text-white rounded-2xl backdrop-blur-md border border-white/20 transition-all" title="Edit Course">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                            </div>
+                                        ` : ''}
                                     </div>
-                                    ${userData && userData.role === 'admin' ? `
-                                        <div class="ml-auto flex gap-2">
-                                            <button onclick="showLessonForm('${id}')" class="p-3 bg-white/20 hover:bg-white/40 text-white rounded-xl backdrop-blur-md transition" title="Manage Lessons">
-                                                <i class="fas fa-list-ol"></i>
-                                            </button>
-                                            <button onclick="editCourse('${id}')" class="p-3 bg-white/20 hover:bg-white/40 text-white rounded-xl backdrop-blur-md transition" title="Edit Course">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                        </div>
-                                    ` : ''}
                                 </div>
                             </div>
                             
-                            <div class="space-y-12">
-                                <div>
-                                    <h2 class="text-2xl font-bold mb-6" data-i18n="description">Description</h2>
-                                    <div class="text-slate-600 leading-relaxed whitespace-pre-wrap">
+                            <div class="space-y-10">
+                                <!-- Description Card -->
+                                <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+                                    <h2 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3">
+                                        <div class="w-1.5 h-6 bg-blue-600 rounded-full"></div>
+                                        <span data-i18n="description">Description</span>
+                                    </h2>
+                                    <div class="text-slate-600 leading-relaxed text-sm md:text-base whitespace-pre-wrap">
                                         ${c.description || 'No description provided.'}
                                     </div>
                                 </div>
 
-                                <div id="review-section">
-                                    <h2 class="text-2xl font-bold mb-8" data-i18n="reviews">Reviews</h2>
-                                    <div id="reviews-list" class="space-y-6 mb-8"></div>
+                                <!-- Review Card -->
+                                <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+                                    <h2 class="text-xl font-bold text-slate-800 mb-8 flex items-center gap-3">
+                                        <div class="w-1.5 h-6 bg-blue-600 rounded-full"></div>
+                                        <span data-i18n="reviews">Reviews</span>
+                                    </h2>
+                                    <div id="reviews-list" class="space-y-6 mb-10"></div>
                                     ${reviewFormHtml}
                                 </div>
                             </div>
                         </div>
 
-                        <div class="lg:col-span-1">
-                            <div class="sticky top-28 bg-white p-8 rounded-[2rem] border border-slate-100 shadow-xl">
-                                <div class="mb-8">
-                                    <p class="text-slate-400 text-sm font-bold uppercase tracking-widest mb-1">Course Price</p>
-                                    <h3 class="text-4xl font-extrabold text-slate-900">${c.isFree ? (currentLang === 'bn' ? 'ফ্রি' : 'Free') : '৳' + c.price}</h3>
-                                </div>
-                                
-                                <div class="space-y-4 mb-8">
-                                    <div class="flex items-center gap-3 text-slate-600">
-                                        <i class="fas fa-check-circle text-green-500"></i> Full Lifetime Access
-                                    </div>
-                                    <div class="flex items-center gap-3 text-slate-600">
-                                        <i class="fas fa-check-circle text-green-500"></i> Certificate of Completion
-                                    </div>
-                                    <div class="flex items-center gap-3 text-slate-600">
-                                        <i class="fas fa-check-circle text-green-500"></i> Mobile & TV Access
+                        <!-- Right Column (Sidebar) -->
+                        <div class="w-full lg:w-96 shrink-0">
+                            <div class="sticky top-28 space-y-6">
+                                <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-xl overflow-hidden relative">
+                                    <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-50 rounded-full blur-3xl opacity-50 -z-0"></div>
+                                    
+                                    <div class="relative z-10">
+                                        <div class="mb-8">
+                                            <p class="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2">Price & Enrollment</p>
+                                            <h3 class="text-4xl font-black text-slate-900 flex items-baseline gap-2">
+                                                ${isActuallyFree ? (currentLang === 'bn' ? 'ফ্রি' : 'Free') : `৳${c.price}`}
+                                            </h3>
+                                        </div>
+                                        
+                                        <div class="space-y-4 mb-8">
+                                            <div class="flex items-center gap-3 text-slate-600 font-medium text-sm">
+                                                <div class="w-6 h-6 rounded-full bg-green-50 flex items-center justify-center shrink-0">
+                                                    <i class="fas fa-check text-[10px] text-green-600"></i>
+                                                </div>
+                                                Full Lifetime Access
+                                            </div>
+                                            <div class="flex items-center gap-3 text-slate-600 font-medium text-sm">
+                                                <div class="w-6 h-6 rounded-full bg-green-50 flex items-center justify-center shrink-0">
+                                                    <i class="fas fa-check text-[10px] text-green-600"></i>
+                                                </div>
+                                                Certificate of Completion
+                                            </div>
+                                            <div class="flex items-center gap-3 text-slate-600 font-medium text-sm">
+                                                <div class="w-6 h-6 rounded-full bg-green-50 flex items-center justify-center shrink-0">
+                                                    <i class="fas fa-check text-[10px] text-green-600"></i>
+                                                </div>
+                                                Mobile & TV Access
+                                            </div>
+                                        </div>
+
+                                        ${actionBtnHtml}
                                     </div>
                                 </div>
 
-                                ${actionBtnHtml}
+                                <!-- Trust Badge -->
+                                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 text-center">
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Trusted Learning</p>
+                                    <div class="flex justify-center gap-4 text-slate-300 text-lg">
+                                        <i class="fas fa-shield-alt"></i>
+                                        <i class="fas fa-award"></i>
+                                        <i class="fas fa-user-graduate"></i>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2447,6 +2492,24 @@
                 document.getElementById('settings-modal').classList.add('hidden');
             }
         };
+
+        // Global Modal Closer
+        window.addEventListener('mousedown', (e) => {
+            const modals = [
+                {id: 'lesson-modal', h: hideLessonForm},
+                {id: 'course-modal', h: hideCourseForm},
+                {id: 'profile-modal', h: hideProfileEdit},
+                {id: 'assign-modal', h: hideAssignModal},
+                {id: 'settings-modal', h: () => document.getElementById('settings-modal').classList.add('hidden')}
+            ];
+            
+            modals.forEach(m => {
+                const el = document.getElementById(m.id);
+                if (el && !el.classList.contains('hidden') && e.target === el) {
+                    m.h();
+                }
+            });
+        });
 
     </script>
 </body>
